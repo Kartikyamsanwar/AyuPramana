@@ -11,6 +11,7 @@ export interface HealthInfo {
   llm: { provider: string; model: string; configured: boolean };
   embedding_model: string;
   corpus: { raw_files: number; manifest_entries: number; documents: number; chunks: number };
+  features: { admin_mode: boolean; reranker: boolean; citation_verification: boolean; translator: string | null };
 }
 
 export interface Citation {
@@ -91,4 +92,41 @@ export interface SourceDocument {
   status: "ingested" | "pending" | "missing_file" | "removed_from_manifest";
   active_version: SourceVersion | null;
   versions: SourceVersion[];
+}
+
+export interface AdminOverview {
+  stats: {
+    queries: number;
+    abstention_rate: number | null;
+    avg_confidence: number | null;
+    feedback_up: number;
+    feedback_down: number;
+    escalations: number;
+    by_language: Record<string, number>;
+  };
+  queries: {
+    id: number;
+    created_at: string;
+    language: string;
+    jurisdiction: string;
+    query_text: string;
+    intents: string[];
+    blocks: Record<string, { confidence: number; abstained: boolean; reason: string | null; mode: string; citations: string[] }>;
+    min_confidence: number | null;
+    abstained: boolean;
+    latency_ms: number;
+    llm_provider: string;
+    source: string;
+  }[];
+  feedback: { id: number; query_id: number | null; jurisdiction: string | null; rating: string; comment: string; created_at: string }[];
+  escalations: {
+    id: number;
+    reference: string;
+    query_id: number | null;
+    jurisdiction: string | null;
+    language: string;
+    note: string;
+    status: string;
+    created_at: string;
+  }[];
 }

@@ -1,5 +1,13 @@
 /** Thin wrappers around the backend REST API. All paths are relative, so the dev proxy / nginx handle routing. */
-import type { ChatRequest, ChatResponse, HealthInfo, Language, SingleJurisdiction, SourceDocument } from "./types";
+import type {
+  AdminOverview,
+  ChatRequest,
+  ChatResponse,
+  HealthInfo,
+  Language,
+  SingleJurisdiction,
+  SourceDocument,
+} from "./types";
 
 async function getJson<T>(path: string): Promise<T> {
   const response = await fetch(path);
@@ -54,6 +62,16 @@ export async function streamChat(request: ChatRequest, onStatus: (stage: string)
   }
   throw new Error("stream ended without a response");
 }
+
+export const fetchAdminOverview = () => getJson<AdminOverview>("/api/admin/overview");
+
+export const sendFeedback = (body: {
+  session_id: string;
+  query_id: number | null;
+  jurisdiction: SingleJurisdiction;
+  rating: "up" | "down";
+  comment: string;
+}) => postJson<{ status: string }>("/api/feedback", body);
 
 export const escalate = (body: {
   session_id: string;

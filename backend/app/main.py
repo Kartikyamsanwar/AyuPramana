@@ -8,7 +8,7 @@ import queue
 import threading
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -19,11 +19,15 @@ from app.ingest.manifest import ManifestError, load_manifest
 from app.guardrails.messages import msg
 from app.guardrails.pii import scrub
 from app.schemas import (
+    AdminOverview,
     ChatRequest,
     ChatResponse,
     CorpusStatus,
     EscalateRequest,
     EscalateResponse,
+    Features,
+    FeedbackRequest,
+    FeedbackResponse,
     HealthResponse,
     LlmStatus,
     SourcesResponse,
@@ -92,6 +96,12 @@ def create_app(services: Services | None = None) -> FastAPI:
             corpus=CorpusStatus(
                 raw_files=raw_files, manifest_entries=manifest_entries, documents=documents, chunks=chunks
             ),
+            features=Features(
+                admin_mode=svc.settings.admin_mode,
+                reranker=svc.retriever.reranker is not None,
+                citation_verification=svc.settings.citation_verification and svc.llm is not None,
+                translator=svc.translator.name if svc.translator else None,
+            ),
         )
 
     @app.post("/api/chat", response_model=ChatResponse)
@@ -144,6 +154,27 @@ def create_app(services: Services | None = None) -> FastAPI:
         return EscalateResponse(
             status="recorded", reference=reference, message=msg("escalation_recorded", body.language).format(reference=reference)
         )
+
+    @app.post("/api/feedback", response_model=FeedbackResponse)
+    def feedback(body: FeedbackRequest, svc: Services = Depends(get_services)) -> FeedbackResponse:
+        """Thumbs up/down on an answer, with an optional (PII-scrubbed) comment."""
+        svc.audit.record_feedback(
+            session_id=body.session_id,
+            query_id=body.query_id,
+            jurisdiction=body.jurisdiction,
+            rating=body.rating,
+            scrubbed_comment=scrub(body.comment).text,
+        )
+        return FeedbackResponse(status="recorded")
+
+    @app.get("/api/admin/overview", response_model=AdminOverview)
+    def admin_overview(
+        limit: int = 50, include_eval: bool = False, svc: Services = Depends(get_services)
+    ) -> AdminOverview:
+        """Audit data for the admin page. Prototype: no login, so it only exists when ADMIN_MODE=true."""
+        if not svc.settings.admin_mode:
+            raise HTTPException(status_code=404, detail="Admin mode is disabled")
+        return svc.audit.overview(limit=max(1, min(limit, 500)), include_eval=include_eval)
 
     @app.get("/api/sources", response_model=SourcesResponse)
     def sources(svc: Services = Depends(get_services)) -> SourcesResponse:

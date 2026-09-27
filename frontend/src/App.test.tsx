@@ -11,6 +11,7 @@ const health = {
   llm: { provider: "groq", model: "m", configured: true },
   embedding_model: "e",
   corpus: { raw_files: 1, manifest_entries: 1, documents: 1, chunks: 5 },
+  features: { admin_mode: true, reranker: false, citation_verification: true, translator: "llm" },
 };
 
 const block = (jurisdiction: "india" | "international") => ({
@@ -41,10 +42,28 @@ const block = (jurisdiction: "india" | "international") => ({
   signals: {},
 });
 
+const sources = {
+  manifest_error: null,
+  documents: [
+    {
+      id: "widgets_act",
+      title: "Sample Widgets Act (fictional)",
+      jurisdiction: "india",
+      domain: "ip",
+      doc_type: "statute",
+      source_url: "",
+      file: "india/widgets.txt",
+      status: "ingested",
+      active_version: { version: "abc123", version_date: "2099-01-01", ingested_at: "", chunk_count: 7, active: true },
+      versions: [],
+    },
+  ],
+};
+
 function mockApi(chat: ChatResponse) {
   return vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
     const url = String(input);
-    const body = url.includes("/api/chat") ? chat : health;
+    const body = url.includes("/api/chat") ? chat : url.includes("/api/sources") ? sources : health;
     return new Response(JSON.stringify(body));
   });
 }
@@ -145,5 +164,33 @@ describe("Language selector", () => {
     await screen.findAllByRole("article");
     const body = JSON.parse(String(fetchMock.mock.calls.find((c) => String(c[0]).includes("/api/chat"))?.[1]?.body));
     expect(body.language).toBe("mr");
+  });
+});
+
+describe("Pages", () => {
+  afterEach(() => {
+    window.location.hash = "";
+  });
+
+  it("shows the Sources page with version date and chunk count", async () => {
+    mockApi(chatBoth);
+    render(<App />);
+    await userEvent.click(await screen.findByRole("link", { name: "Sources" }));
+    expect(await screen.findByText("Sample Widgets Act (fictional)")).toBeInTheDocument();
+    expect(screen.getByText("2099-01-01")).toBeInTheDocument();
+    expect(screen.getByText("7")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Audit" })).toBeInTheDocument(); // admin mode on
+  });
+
+  it("records feedback on an answer", async () => {
+    const fetchMock = mockApi(chatBoth);
+    render(<App />);
+    await userEvent.type(screen.getByRole("textbox"), "How are widgets registered?");
+    await userEvent.click(screen.getByRole("button", { name: "Send" }));
+    const [card] = await screen.findAllByRole("article");
+    await userEvent.click(within(card).getByRole("button", { name: "Helpful" }));
+    expect(await within(card).findByText("Thanks for the feedback!")).toBeInTheDocument();
+    const feedback = fetchMock.mock.calls.find((c) => String(c[0]) === "/api/feedback");
+    expect(JSON.parse(String(feedback?.[1]?.body))).toMatchObject({ rating: "up", query_id: 1 });
   });
 });

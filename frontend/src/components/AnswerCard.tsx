@@ -2,6 +2,7 @@ import { useT } from "../i18n";
 import type { AnswerBlock, Citation, Language } from "../types";
 import { ConfidenceBadge } from "./ConfidenceBadge";
 import { EscalateButton } from "./EscalateButton";
+import { FeedbackButtons } from "./FeedbackButtons";
 import { Markdown } from "./Markdown";
 
 /** One jurisdiction's answer: text with citation chips, source list, confidence and disclaimer. */
@@ -63,6 +64,7 @@ export function AnswerCard({
 
       <footer className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-stone-100 px-4 py-2">
         <p className="text-xs text-stone-500">{disclaimer}</p>
+        <FeedbackButtons queryId={queryId} jurisdiction={block.jurisdiction} />
         <EscalateButton
           queryId={queryId}
           jurisdiction={block.jurisdiction}

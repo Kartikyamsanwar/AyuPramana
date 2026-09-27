@@ -25,6 +25,13 @@ class CorpusStatus(BaseModel):
     chunks: int = 0
 
 
+class Features(BaseModel):
+    admin_mode: bool
+    reranker: bool
+    citation_verification: bool
+    translator: str | None
+
+
 class HealthResponse(BaseModel):
     status: str
     app: str
@@ -32,6 +39,7 @@ class HealthResponse(BaseModel):
     llm: LlmStatus
     embedding_model: str
     corpus: CorpusStatus
+    features: Features
 
 
 # --- Chat -----------------------------------------------------------------
@@ -100,6 +108,72 @@ class EscalateResponse(BaseModel):
     status: Literal["recorded"]
     reference: str
     message: str
+
+
+# --- Feedback ----------------------------------------------------------------
+class FeedbackRequest(BaseModel):
+    session_id: str = Field(pattern=SESSION_ID_PATTERN)
+    query_id: int | None = None
+    jurisdiction: Literal["india", "international"] | None = None
+    rating: Literal["up", "down"]
+    comment: str = Field(default="", max_length=1000)
+
+
+class FeedbackResponse(BaseModel):
+    status: Literal["recorded"]
+
+
+# --- Admin / audit --------------------------------------------------------------
+class AdminStats(BaseModel):
+    queries: int
+    abstention_rate: float | None
+    avg_confidence: float | None
+    feedback_up: int
+    feedback_down: int
+    escalations: int
+    by_language: dict[str, int]
+
+
+class AdminQuery(BaseModel):
+    id: int
+    created_at: str
+    language: str
+    jurisdiction: str
+    query_text: str
+    intents: list[str]
+    blocks: dict
+    min_confidence: float | None
+    abstained: bool
+    latency_ms: int
+    llm_provider: str
+    source: str
+
+
+class AdminFeedback(BaseModel):
+    id: int
+    query_id: int | None
+    jurisdiction: str | None
+    rating: str
+    comment: str
+    created_at: str
+
+
+class AdminEscalation(BaseModel):
+    id: int
+    reference: str
+    query_id: int | None
+    jurisdiction: str | None
+    language: str
+    note: str
+    status: str
+    created_at: str
+
+
+class AdminOverview(BaseModel):
+    stats: AdminStats
+    queries: list[AdminQuery]
+    feedback: list[AdminFeedback]
+    escalations: list[AdminEscalation]
 
 
 # --- Sources ----------------------------------------------------------------
