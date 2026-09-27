@@ -1,0 +1,34 @@
+# AyuPramana: backend (FastAPI) + frontend (nginx serving the React build).
+#   docker compose up --build        then open http://localhost:8080
+# Ingest documents inside the backend container:
+#   docker compose exec backend python scripts/ingest.py --all
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATA_DIR: /app/data
+      STORAGE_DIR: /app/storage
+      CORS_ORIGINS: http://localhost:8080
+    volumes:
+      - ./data:/app/data            # corpus, manifest, eval set (edited by the team)
+      - ./storage:/app/storage      # vector DB, SQLite, downloaded models
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_VOICE_INPUT: ${VITE_VOICE_INPUT:-false}
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped

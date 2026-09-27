@@ -1,0 +1,28 @@
+# AyuPramana corpus manifest — one entry per document in data/raw/.
+#
+# The assistant only knows what is listed here AND present on disk.
+# Add an entry, drop the file in data/raw/<jurisdiction>/, then run:
+#     python scripts/ingest.py --all
+#
+# Fields
+#   id            unique snake_case id (never reuse or rename once ingested)
+#   title         official title, exactly as printed on the document
+#   jurisdiction  india | international
+#   domain        ip | abs | drug_regulation | advertising | food | cosmetics | tk
+#   doc_type      statute | rules | treaty | guideline | registry_note
+#   version_date  "YYYY-MM-DD" — the date of the text you downloaded (amendment/consolidation date)
+#   source_url    the exact official page you downloaded it from
+#   file          path relative to data/raw/
+#
+# See docs/CORPUS_SOURCES.md for the list of documents to collect.
+#
+# Example (fill every value from the real document — do not guess):
+#
+# - id: patents_act_1970
+#   title: "The Patents Act, 1970"
+#   jurisdiction: india
+#   domain: ip
+#   doc_type: statute
+#   version_date: "YYYY-MM-DD"
+#   source_url: "https://..."
+#   file: india/patents_act_1970.pdf
