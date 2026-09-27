@@ -12,6 +12,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
 from app.ingest.loaders import SUPPORTED_SUFFIXES
@@ -180,6 +181,11 @@ def create_app(services: Services | None = None) -> FastAPI:
     def sources(svc: Services = Depends(get_services)) -> SourcesResponse:
         """Corpus documents with their versions and ingestion status."""
         return list_sources(svc.settings, svc.repository)
+
+    # Single-container hosting (e.g. Hugging Face Spaces): serve the built UI at "/".
+    # Mounted last so every /api route takes precedence.
+    if settings.static_dir and settings.static_dir.is_dir():
+        app.mount("/", StaticFiles(directory=settings.static_dir, html=True), name="ui")
 
     return app
 

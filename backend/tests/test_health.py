@@ -25,3 +25,12 @@ def test_relative_paths_resolve_from_repo_root(tmp_path) -> None:
     assert settings.data_dir.is_absolute()
     assert settings.data_dir.name == "data"
     assert settings.storage_dir == tmp_path
+
+
+def test_built_ui_is_served_when_static_dir_is_set(make_client, tmp_path) -> None:
+    dist = tmp_path / "dist"
+    dist.mkdir()
+    (dist / "index.html").write_text("<html>AyuPramana UI</html>", encoding="utf-8")
+    client, _ = make_client(static_dir=dist)
+    assert "AyuPramana UI" in client.get("/").text
+    assert client.get("/api/health").json()["status"] == "ok"  # API still wins

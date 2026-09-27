@@ -80,16 +80,20 @@ class Settings(BaseSettings):
     # --- Storage -----------------------------------------------------------
     data_dir: Path = REPO_ROOT / "data"
     storage_dir: Path = REPO_ROOT / "storage"
+    # Built web UI (frontend/dist) to serve from the backend in single-container hosting; unset in development
+    static_dir: Path | None = None
 
     # --- Privacy and admin -------------------------------------------------
     admin_mode: bool = False
     log_queries: bool = True
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
-    @field_validator("data_dir", "storage_dir", mode="after")
+    @field_validator("data_dir", "storage_dir", "static_dir", mode="after")
     @classmethod
-    def _resolve_from_repo_root(cls, value: Path) -> Path:
+    def _resolve_from_repo_root(cls, value: Path | None) -> Path | None:
         """Relative paths in `.env` are taken relative to the repository root."""
+        if value is None:
+            return None
         return value if value.is_absolute() else (REPO_ROOT / value).resolve()
 
     # --- Derived values ----------------------------------------------------
