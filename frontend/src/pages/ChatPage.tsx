@@ -69,7 +69,7 @@ export function ChatPage({
           <h2 className="text-2xl font-semibold text-leaf-800">{t("emptyTitle")}</h2>
           <p className="mt-3 max-w-xl text-stone-600">{t("emptyBody")}</p>
           <div className="mt-6 flex flex-wrap justify-center gap-2">
-            {(["starter1", "starter2"] as const).map((key) => (
+            {(["starter1", "starter2", "starter3"] as const).map((key) => (
               <button
                 key={key}
                 type="button"

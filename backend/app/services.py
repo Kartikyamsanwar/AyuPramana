@@ -27,6 +27,8 @@ from app.retrieval.embeddings import Embedder, SentenceTransformerEmbedder
 from app.retrieval.reranker import CrossEncoderReranker, Reranker
 from app.retrieval.search import Retriever, default_similarity_range
 from app.retrieval.vector_store import VectorStore
+from app.translate.base import Translator
+from app.translate.factory import build_translator
 
 _UNSET = object()
 
@@ -42,6 +44,7 @@ class Services:
     llm: LLMClient | None
     audit: AuditLog
     answerer: GroundedAnswerer
+    translator: Translator | None
     chat: ChatService
 
     def ingestor(self) -> Ingestor:
@@ -97,7 +100,10 @@ def build_services(
     }
     sessions = SessionStore()
     formulation = FormulationClassifierAgent(answerer, settings.data_dir / "formulation_flow.yaml", sessions)
-    chat = ChatService(settings, answerer, audit, Router(llm_client), specialists, formulation, sessions)
+    translator = build_translator(settings, llm_client)
+    chat = ChatService(
+        settings, answerer, audit, Router(llm_client), specialists, formulation, sessions, translator=translator
+    )
     return Services(
         settings=settings,
         session_factory=session_factory,
@@ -108,5 +114,6 @@ def build_services(
         llm=llm_client,
         audit=audit,
         answerer=answerer,
+        translator=translator,
         chat=chat,
     )

@@ -128,3 +128,22 @@ describe("Formulation classifier quick replies", () => {
     });
   });
 });
+
+describe("Language selector", () => {
+  it("switches UI strings to Hindi and Marathi and sends the language with questions", async () => {
+    const fetchMock = mockApi(chatBoth);
+    render(<App />);
+    await userEvent.selectOptions(screen.getByRole("combobox"), "hi");
+    expect(screen.getByRole("radio", { name: "भारत" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "भेजें" })).toBeInTheDocument();
+    expect(document.documentElement.lang).toBe("hi");
+
+    await userEvent.selectOptions(screen.getByRole("combobox"), "mr");
+    expect(screen.getByRole("button", { name: "पाठवा" })).toBeInTheDocument();
+    await userEvent.type(screen.getByRole("textbox"), "प्रश्न");
+    await userEvent.click(screen.getByRole("button", { name: "पाठवा" }));
+    await screen.findAllByRole("article");
+    const body = JSON.parse(String(fetchMock.mock.calls.find((c) => String(c[0]).includes("/api/chat"))?.[1]?.body));
+    expect(body.language).toBe("mr");
+  });
+});

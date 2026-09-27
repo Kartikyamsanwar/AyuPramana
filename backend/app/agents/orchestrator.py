@@ -1,11 +1,12 @@
 """Orchestrator: runs one chat turn end to end.
 
-    PII scrub
+    PII scrub → translate Hindi/Marathi question to English (pivot language)
       → pending clarifying question?  (formulation classifier flow)
       → Router agent: scope + intents
       → out of scope?  → polite abstention
       → specialists, separately for each jurisdiction (in parallel)
       → Composer: one cited block per jurisdiction
+      → translate generated answers back (citation markers preserved)
       → audit log (PII-scrubbed)
 """
 
@@ -29,6 +30,7 @@ from app.db.audit import AuditLog
 from app.guardrails.messages import msg
 from app.guardrails.pii import scrub
 from app.schemas import AnswerBlock, ChatRequest, ChatResponse, QuickReply
+from app.translate.base import TranslationError, Translator, has_devanagari
 
 STARTERS = ("starter_patent", "starter_plant", "starter_classify")
 
@@ -61,6 +63,7 @@ class ChatService:
         specialists: dict,
         formulation: FormulationClassifierAgent,
         sessions: SessionStore,
+        translator: Translator | None = None,
     ) -> None:
         self.settings = settings
         self.answerer = answerer
@@ -69,6 +72,7 @@ class ChatService:
         self.specialists = specialists
         self.formulation = formulation
         self.sessions = sessions
+        self.translator = translator
 
     def handle(self, request: ChatRequest, source: str = "chat", emit: EventSink | None = None) -> ChatResponse:
         return self.handle_with_trace(request, source, emit)[0]
@@ -79,7 +83,8 @@ class ChatService:
         emit = emit or _no_events
         started = time.perf_counter()
         language = request.language
-        question = scrub(request.message).text
+        original = scrub(request.message).text
+        question = self._to_english(original, language, emit)
         trace = TurnTrace(question_en=question)
         jurisdictions = jurisdictions_for(request.jurisdiction)
 
@@ -94,7 +99,7 @@ class ChatService:
             trace.results = results
             blocks: dict[str, AnswerBlock] = {}
             for jurisdiction, result in results.items():
-                block = to_block(result, self.settings.confidence_threshold, language)
+                block = self._localize(to_block(result, self.settings.confidence_threshold, language), language, emit)
                 if notice:
                     block.escalation_suggested = True
                 blocks[jurisdiction] = block
@@ -103,7 +108,7 @@ class ChatService:
                 session_id=request.session_id,
                 language=language,
                 jurisdiction=request.jurisdiction,
-                scrubbed_query=question,
+                scrubbed_query=original,
                 intents=intents or [],
                 blocks=blocks,
                 latency_ms=int((time.perf_counter() - started) * 1000),
@@ -175,6 +180,38 @@ class ChatService:
         return finish(self._parallel(jurisdictions, run_for), intents, notice=notice)
 
     # ------------------------------------------------------------------
+    def _to_english(self, text: str, language: str, emit: EventSink) -> str:
+        """Hindi/Marathi questions are searched in English, the corpus language.
+        If translation fails, the original is used (the multilingual embeddings still match it)."""
+        if self.translator is None or not has_devanagari(text):
+            return text
+        emit("status", {"stage": "translating"})
+        try:
+            return self.translator.translate_texts([text], language if language != "en" else "hi", "en")[0]
+        except TranslationError:
+            return text
+
+    def _localize(self, block: AnswerBlock, language: str, emit: EventSink) -> AnswerBlock:
+        """Translate LLM-written answers. Fixed messages are already localized, and quoted
+        source text stays in its original language on purpose."""
+        if language == "en":
+            return block
+        if block.mode == "extractive":
+            # Quotes stay verbatim in the source language; only the intro line is localized
+            block.markdown = block.markdown.replace(msg("extractive_intro"), msg("extractive_intro", language), 1)
+            return block
+        if block.mode != "generated":
+            return block
+        if self.translator is not None:
+            emit("status", {"stage": "translating", "jurisdiction": block.jurisdiction})
+            try:
+                block.markdown = self.translator.translate_markdown(block.markdown, "en", language)
+                return block
+            except TranslationError:
+                pass
+        block.markdown = f"_{msg('translation_unavailable', language)}_\n\n{block.markdown}"
+        return block
+
     def _run_specialist(self, intent: str, ctx: TurnContext, jurisdiction: str, intents: list[str]) -> SpecialistResult:
         agent = self.specialists.get(intent) or self.specialists["general_regulatory"]
         if isinstance(agent, RegistryNavigatorAgent):

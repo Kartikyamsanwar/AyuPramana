@@ -7,7 +7,8 @@
 # `search` lines are only retrieval queries (used to find the definitions in the corpus); they are
 # never shown to users. `domains` narrows the search to manifest documents with those domains.
 #
-# TEAM: review the wording with a regulatory expert, add Hindi/Marathi labels, then set verified: true.
+# TEAM: review the wording (and the Hindi/Marathi labels) with a regulatory expert and a native
+# speaker, then set verified: true.
 verified: false
 max_questions: 4
 
@@ -15,80 +16,88 @@ questions:
   - id: origin
     text:
       en: "Where does your product's formulation come from?"
+      hi: "आपके उत्पाद का योग (फ़ॉर्मूलेशन) कहाँ से लिया गया है?"
+      mr: "तुमच्या उत्पादनाचा योग (फॉर्म्युलेशन) कुठून घेतला आहे?"
     options:
       - id: classical_text
-        label: { en: "Exactly as described in a classical Ayurvedic text" }
+        label: { en: "Exactly as described in a classical Ayurvedic text", hi: "ठीक वैसा ही जैसा किसी शास्त्रीय आयुर्वेदिक ग्रंथ में बताया गया है", mr: "एखाद्या शास्त्रीय आयुर्वेदिक ग्रंथात सांगितल्याप्रमाणे अगदी तसाच" }
       - id: classical_modified
-        label: { en: "Classical ingredients, but a new combination or dosage form" }
+        label: { en: "Classical ingredients, but a new combination or dosage form", hi: "शास्त्रीय घटक, लेकिन नया संयोजन या नया रूप", mr: "शास्त्रीय घटक, पण नवे मिश्रण किंवा नवे स्वरूप" }
       - id: new_formulation
-        label: { en: "A new formulation, not based on classical texts" }
+        label: { en: "A new formulation, not based on classical texts", hi: "नया योग, जो शास्त्रीय ग्रंथों पर आधारित नहीं है", mr: "नवीन योग, जो शास्त्रीय ग्रंथांवर आधारित नाही" }
       - id: extract
-        label: { en: "A purified or standardised plant extract or fraction" }
+        label: { en: "A purified or standardised plant extract or fraction", hi: "पौधे का शुद्ध या मानकीकृत अर्क या अंश", mr: "वनस्पतीचा शुद्ध किंवा प्रमाणित अर्क किंवा अंश" }
       - id: not_sure
-        label: { en: "Not sure" }
+        label: { en: "Not sure", hi: "पक्का नहीं पता", mr: "नक्की माहीत नाही" }
 
   - id: use
     text:
       en: "How is the product meant to be used?"
+      hi: "उत्पाद का उपयोग किस प्रकार किया जाना है?"
+      mr: "उत्पादनाचा वापर कसा करायचा आहे?"
     options:
       - id: treat_prevent
-        label: { en: "Taken to treat or prevent a disease or disorder" }
+        label: { en: "Taken to treat or prevent a disease or disorder", hi: "किसी रोग या विकार के उपचार या रोकथाम के लिए लिया जाता है", mr: "एखाद्या आजाराच्या किंवा विकाराच्या उपचारासाठी किंवा प्रतिबंधासाठी घेतले जाते" }
       - id: food
-        label: { en: "Eaten as food, a health drink or a dietary supplement" }
+        label: { en: "Eaten as food, a health drink or a dietary supplement", hi: "भोजन, स्वास्थ्य पेय या आहार पूरक के रूप में", mr: "अन्न, आरोग्य पेय किंवा आहार पूरक म्हणून" }
       - id: external_beauty
-        label: { en: "Applied to skin or hair to cleanse or beautify" }
+        label: { en: "Applied to skin or hair to cleanse or beautify", hi: "त्वचा या बालों पर सफ़ाई या सौंदर्य के लिए लगाया जाता है", mr: "त्वचा किंवा केसांवर स्वच्छता किंवा सौंदर्यासाठी लावले जाते" }
       - id: not_sure
-        label: { en: "Not sure" }
+        label: { en: "Not sure", hi: "पक्का नहीं पता", mr: "नक्की माहीत नाही" }
 
   - id: ingredients
     text:
       en: "What does it contain?"
+      hi: "इसमें क्या-क्या है?"
+      mr: "त्यात काय काय आहे?"
     options:
       - id: plant_only
-        label: { en: "Only plant-based ingredients" }
+        label: { en: "Only plant-based ingredients", hi: "केवल वनस्पति-आधारित घटक", mr: "फक्त वनस्पती-आधारित घटक" }
       - id: mineral_animal
-        label: { en: "Includes minerals, metals or animal-derived ingredients" }
+        label: { en: "Includes minerals, metals or animal-derived ingredients", hi: "खनिज, धातु या पशु-आधारित घटक भी हैं", mr: "खनिजे, धातू किंवा प्राणिज घटकही आहेत" }
       - id: synthetic
-        label: { en: "Includes synthetic or modern-medicine ingredients" }
+        label: { en: "Includes synthetic or modern-medicine ingredients", hi: "कृत्रिम या आधुनिक-चिकित्सा के घटक भी हैं", mr: "कृत्रिम किंवा आधुनिक-वैद्यकातील घटकही आहेत" }
       - id: not_sure
-        label: { en: "Not sure" }
+        label: { en: "Not sure", hi: "पक्का नहीं पता", mr: "नक्की माहीत नाही" }
 
   - id: claims
     text:
       en: "What will your label or advertising say about health?"
+      hi: "आपका लेबल या विज्ञापन स्वास्थ्य के बारे में क्या कहेगा?"
+      mr: "तुमचे लेबल किंवा जाहिरात आरोग्याबद्दल काय सांगेल?"
     options:
       - id: disease_claims
-        label: { en: "That it cures, treats or prevents specific diseases" }
+        label: { en: "That it cures, treats or prevents specific diseases", hi: "कि यह विशिष्ट रोगों को ठीक करता है, उनका उपचार या रोकथाम करता है", mr: "की ते विशिष्ट आजार बरे करते, त्यांवर उपचार करते किंवा प्रतिबंध करते" }
       - id: wellness_claims
-        label: { en: "Only general wellness or nutrition claims" }
+        label: { en: "Only general wellness or nutrition claims", hi: "केवल सामान्य स्वास्थ्य या पोषण संबंधी दावे", mr: "फक्त सामान्य आरोग्य किंवा पोषणविषयक दावे" }
       - id: no_claims
-        label: { en: "No health claims" }
+        label: { en: "No health claims", hi: "कोई स्वास्थ्य दावा नहीं", mr: "कोणताही आरोग्य दावा नाही" }
       - id: not_sure
-        label: { en: "Not sure" }
+        label: { en: "Not sure", hi: "पक्का नहीं पता", mr: "नक्की माहीत नाही" }
 
 categories:
   - id: classical
-    label: { en: "Classical (generic) Ayurvedic medicine" }
+    label: { en: "Classical (generic) Ayurvedic medicine", hi: "शास्त्रीय (जेनेरिक) आयुर्वेदिक औषधि", mr: "शास्त्रीय (जेनेरिक) आयुर्वेदिक औषध" }
     search: "Ayurvedic drug definition classical formulation"
     domains: [drug_regulation]
   - id: proprietary
-    label: { en: "Patent or proprietary Ayurvedic medicine" }
+    label: { en: "Patent or proprietary Ayurvedic medicine", hi: "पेटेंट या प्रोप्राइटरी आयुर्वेदिक औषधि", mr: "पेटंट किंवा प्रोप्रायटरी आयुर्वेदिक औषध" }
     search: "patent or proprietary Ayurvedic medicine definition"
     domains: [drug_regulation]
   - id: new_drug
-    label: { en: "New drug" }
+    label: { en: "New drug", hi: "नई औषधि", mr: "नवीन औषध" }
     search: "new drug definition approval"
     domains: [drug_regulation]
   - id: phytopharmaceutical
-    label: { en: "Phytopharmaceutical drug" }
+    label: { en: "Phytopharmaceutical drug", hi: "फाइटोफार्मास्युटिकल औषधि", mr: "फायटोफार्मास्युटिकल औषध" }
     search: "phytopharmaceutical drug definition"
     domains: [drug_regulation]
   - id: aahar
-    label: { en: "Ayurveda Aahar / nutraceutical food" }
+    label: { en: "Ayurveda Aahar / nutraceutical food", hi: "आयुर्वेद आहार / न्यूट्रास्युटिकल खाद्य", mr: "आयुर्वेद आहार / न्यूट्रास्युटिकल अन्न" }
     search: "Ayurveda Aahar definition food"
     domains: [food]
   - id: cosmetic
-    label: { en: "Cosmetic" }
+    label: { en: "Cosmetic", hi: "प्रसाधन सामग्री (कॉस्मेटिक)", mr: "सौंदर्य प्रसाधन (कॉस्मेटिक)" }
     search: "cosmetic definition"
     domains: [cosmetics, drug_regulation]
 
