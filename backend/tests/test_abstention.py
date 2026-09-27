@@ -1,5 +1,7 @@
 """Confidence scoring, citation verification, abstention and escalation."""
 
+import json
+
 from sqlalchemy import select
 
 from app.db.models import Escalation
@@ -117,3 +119,31 @@ def test_answer_about_a_different_subject_abstains(make_client) -> None:
     assert block["abstained"] and block["abstain_reason"] == "not_on_point"
     verify_prompt = next(user for system, user, kw in llm.calls if "on_point" in system)
     assert verify_prompt.startswith("QUESTION: How are widgets registered?")
+
+
+def test_absence_claims_are_removed_even_if_the_checker_accepts_them(make_client) -> None:
+    answer = (
+        "Widgets must be registered with the registrar. [S1]\n"
+        "- Moonflower widgets are not among the listed items, so they need no registration. [S1]\n"
+        "- Renewal is required every seven moons. [S1]"
+    )
+    client, _ = make_client(llm=FakeLLM(answer=answer))  # the fake checker marks everything supported
+    block = ask(client)["answers"]["india"]
+    assert not block["abstained"]
+    assert "not among" not in block["markdown"]
+    assert "seven moons" in block["markdown"]
+
+
+def test_confirmed_uncited_statement_gets_its_citation_and_empty_bullets_vanish(make_client) -> None:
+    answer = "**Widgets must be registered with the registrar.**\n- .\n- Renewal is required every seven moons. [S1]"
+
+    def checker(system, user, kwargs):
+        if "route user messages" in system:
+            return json.dumps({"scope": "in_scope", "intents": ["general_regulatory"], "search_query": "widgets"})
+        return json.dumps({"on_point": True, "results": [
+            {"id": 1, "supported": True, "sources": [1]}, {"id": 2, "supported": True, "sources": [1]}]})
+
+    client, _ = make_client(llm=FakeLLM(answer=answer, json_responder=checker))
+    block = ask(client)["answers"]["india"]
+    assert block["markdown"].startswith("**Widgets must be registered with the registrar. [S1]**")
+    assert "- ." not in block["markdown"]

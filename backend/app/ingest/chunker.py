@@ -14,6 +14,15 @@ Heuristics (all tested in tests/test_chunker.py):
 * A table of contents ("ARRANGEMENT OF SECTIONS") becomes one "toc" chunk that is not
   used for answers; it ends when the numbering restarts at 1.
 * Inside a Schedule, numbered items are part of the schedule, not new sections.
+* PDFs often split "Article" and "15" onto two lines; they are joined first.
+* A bare heading like "Article 15" only starts a provision if the previous line ended a
+  sentence (otherwise it is a wrapped cross-reference: "...in accordance with / Article 15").
+* Treaties are divided only by explicit "Article N" headings; their numbered paragraphs
+  ("1. Each Contracting Party...") stay inside the article.
+* India Code's front-page "List of amending Acts" is not mistaken for sections.
+* Lines the PDF loader marked as footnotes (small font, prefixed "† ") are never headings.
+* Articles inside an Annex are cited with the annex ("Annex II, Article 3"), and in treaties
+  "Section N" group titles (e.g. in TRIPS) are folded into the next article.
 """
 
 from __future__ import annotations
@@ -21,19 +30,19 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from app.ingest.loaders import PageText
+from app.ingest.loaders import FOOTNOTE_MARK, PageText
 
 # What a bare numbered heading ("12. Title") is called, by manifest doc_type
-DEFAULT_LABELS = {
+DEFAULT_LABELS: dict[str, str | None] = {
     "statute": "Section",
     "rules": "Rule",
-    "treaty": "Article",
+    "treaty": None,  # treaties use explicit "Article N" headings; numbered lines are paragraphs
     "guideline": "Para",
     "registry_note": "Para",
 }
 
 _FOOTNOTE_PREFIX = r"(?:\d{1,2}\s?\[)?"  # India Code amendment marker, e.g. "1[3A. …"
-_NUM = r"(?P<num>\d{1,3}(?:\.\d{1,3})*[A-Z]{0,3}(?:[ -]?(?:bis|ter|quater))?|[IVXLC]{1,7})"
+_NUM = r"(?P<num>\d{1,3}(?:\.\d{1,3})*[A-Z]{0,3}(?:[ -]?(?:bis|ter|quater))?|[IVXLC]{1,7}(?:-?[A-Z](?![a-z]))?)"
 # After the number: end of line, or optional punctuation followed by a Capitalised title
 _TITLE_TAIL = r"(?:\s*$|\s*[.:\-–—]*\s*(?=[A-Zऀ-ॿ(\[\"'“]))"
 
@@ -57,7 +66,7 @@ _NUMBERED_MULTI_RE = re.compile(r"^(?P<num>\d{1,3}(?:\.\d{1,3}){1,3})\.?\s+(?=[A
 
 _ORDINALS = "FIRST|SECOND|THIRD|FOURTH|FIFTH|SIXTH|SEVENTH|EIGHTH|NINTH|TENTH|ELEVENTH|TWELFTH"
 _SCHEDULE_RE = re.compile(
-    rf"^(?:THE\s+|The\s+)?(?:(?P<ord>{_ORDINALS}|{_ORDINALS.title()})\s+)?(?:SCHEDULE|Schedule)"
+    rf"^{_FOOTNOTE_PREFIX}(?:THE\s+|The\s+)?(?:(?P<ord>{_ORDINALS}|{_ORDINALS.title()})\s+)?(?:SCHEDULE|Schedule)"
     r"(?:\s+(?P<num>[A-Z]{1,2}\(\d{1,2}\)|[IVXLC]{1,6}|[A-Z]{1,2}|\d{1,3}))?"
     r"\s*[.:\-–—]?\s*(?:[(\[][^)\]]{0,80}[)\]])?\s*$"
 )
@@ -68,6 +77,12 @@ _TOC_RE = re.compile(
 _FOOTNOTE_RE = re.compile(
     r"^\d{1,3}\.\s*(?:Subs\.|Ins\.|Omitted|Added by|Rep\.|Renumbered|Vide|The words|Certain words|w\.e\.f|Now see|Came into force)"
 )
+# "1. The Patents (Amendment) Act, 2005 (15 of 2005)." — India Code's list of amending Acts
+_AMENDING_ACT_RE = re.compile(r"^\d{1,3}\.\s+The\s.+\(\s*(?:Act\s+(?:No\.\s*)?)?\d+\s+of\s+\d{4}")
+_KEYWORD_ONLY_RE = re.compile(r"^(?:Article|ARTICLE|Section|SECTION|Rule|RULE|Chapter|CHAPTER|Part|PART|Annex|ANNEX)$")
+_NUMBER_ONLY_RE = re.compile(r"^(?:\d{1,3}[A-Z]{0,2}|[IVXLC]{1,7})\.?$")
+_BARE_HEADING_RE = re.compile(r"^\S+\s+\S+?[.:]?$")  # keyword + number and nothing else
+_SENTENCE_BOUNDARY_RE = re.compile(r"[.:;!?)\]\"”’—–-]$")
 _CLAUSE_RE = re.compile(r"^\((?P<label>[a-z]{1,4}|\d{1,3}[A-Z]?)\)")
 _SENTENCE_END_RE = re.compile(r"(?<=[.;:!?।])\s+")
 
@@ -127,22 +142,30 @@ def _leading_int(num: str) -> int | None:
 class _HeadingDetector:
     """Stateful: remembers whether we're in a table of contents or a schedule, and the last section number."""
 
-    def __init__(self, numbered_label: str) -> None:
+    def __init__(self, numbered_label: str | None, treaty: bool = False) -> None:
         self.numbered_label = numbered_label
+        self.treaty = treaty
+        self.annex: str | None = None
+        self.annex_part: str | None = None
         self.in_toc = False
         self.toc_numbers_seen = 0
         self.in_schedule = False
+        self.sections_seen = 0
         self.last_number: int | None = None
 
-    def detect(self, line: str) -> _Heading | None:
+    def detect(self, line: str, previous: str = "") -> _Heading | None:
         if _TOC_RE.match(line):
-            self.in_toc, self.toc_numbers_seen = True, 0
+            self.in_toc, self.toc_numbers_seen, self.in_schedule = True, 0, False
             return _Heading("toc", "Arrangement of sections", None)
-        if _FOOTNOTE_RE.match(line):
+        if line.startswith(FOOTNOTE_MARK) or _FOOTNOTE_RE.match(line) or _AMENDING_ACT_RE.match(line):
             return None
 
-        heading = self._explicit(line) or self._schedule(line)
-        if heading is None and not self.in_schedule:
+        heading = self._explicit(line)
+        if heading and _BARE_HEADING_RE.match(line.strip()) and not _ends_sentence(previous):
+            return None  # a wrapped cross-reference, e.g. "...in accordance with / Article 15"
+        if heading is None and not self.in_toc and self.sections_seen:
+            heading = self._schedule(line)  # a Schedule only after the provisions have started
+        if heading is None and not self.in_schedule and self.numbered_label:
             heading = self._numbered(line)
         if heading is None:
             return None
@@ -162,17 +185,32 @@ class _HeadingDetector:
             self.in_schedule = False
 
         if heading.numbered and heading.number is not None:
-            if self.last_number is not None and heading.number < self.last_number and heading.number != 1:
+            if self.last_number is not None and heading.number < self.last_number:
                 return None  # numbering went backwards: a footnote or list item, not a section
             self.last_number = heading.number
+        if heading.kind == "section":
+            self.sections_seen += 1
         return heading
 
     def _explicit(self, line: str) -> _Heading | None:
         for kind, label, regex in _EXPLICIT_RE:
             match = regex.match(line)
-            if match:
-                num = match.group("num").strip()
-                return _Heading(kind, f"{label} {num}", _leading_int(num))
+            if not match:
+                continue
+            num = match.group("num").strip()
+            if label in ("Annex", "Appendix") and self.sections_seen:
+                # An annex after the main text: its articles are cited as "Annex II, Article 3".
+                # (A document that *is* an annex, like TRIPS = "Annex 1C", gets no prefix.)
+                self.annex, self.annex_part = f"{label} {num}", None
+                return _Heading(kind, self.annex, _leading_int(num))
+            if label == "Part" and self.annex:
+                self.annex_part = f"Part {num}"
+            if self.treaty and label == "Section":
+                kind = "chapter"  # a group title within a Part (e.g. TRIPS), not a provision
+            ref = f"{label} {num}"
+            if self.annex and label == "Article":
+                ref = ", ".join(x for x in (self.annex, self.annex_part, ref) if x)
+            return _Heading(kind, ref, _leading_int(num))
         return None
 
     def _schedule(self, line: str) -> _Heading | None:
@@ -189,6 +227,7 @@ class _HeadingDetector:
         return _Heading("schedule", ref, None)
 
     def _numbered(self, line: str) -> _Heading | None:
+        assert self.numbered_label
         match = _NUMBERED_RE.match(line) or _NUMBERED_MULTI_RE.match(line)
         if not match:
             return None
@@ -196,16 +235,58 @@ class _HeadingDetector:
         return _Heading("section", f"{self.numbered_label} {num}", _leading_int(num), numbered=True)
 
 
-def _split_sections(pages: list[PageText], numbered_label: str) -> list[_Section]:
-    detector = _HeadingDetector(numbered_label)
+def _ends_sentence(previous: str) -> bool:
+    """True if a heading may start after this line (blank, page number, all-caps title, or sentence end)."""
+    previous = previous.strip()
+    return (
+        not previous
+        or previous.isdigit()
+        or bool(re.fullmatch(r"page\s+\d+", previous, flags=re.IGNORECASE))  # running page header
+        or (previous.isupper() and len(previous) > 3)
+        or bool(_SENTENCE_BOUNDARY_RE.search(previous))
+        or _is_title_line(previous)
+    )
+
+
+def _is_title_line(line: str) -> bool:
+    """A short Title Case line such as "Access to Genetic Resources" (a heading's title, not running text)."""
+    words = line.split()
+    long_words = [w for w in words if len(w) > 3]
+    return 0 < len(words) <= 10 and bool(long_words) and all(w[0].isupper() for w in long_words)
+
+
+def _join_split_headings(lines: list[str]) -> list[str]:
+    """PDF layouts often put "Article" and "15" on separate lines; join them into "Article 15"."""
+    joined: list[str] = []
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        following = next((j for j in range(index + 1, min(index + 3, len(lines))) if lines[j].strip()), None)
+        if (
+            _KEYWORD_ONLY_RE.match(line.strip())
+            and following is not None
+            and _NUMBER_ONLY_RE.match(lines[following].strip())
+        ):
+            joined.append(f"{line.strip()} {lines[following].strip().rstrip('.')}")
+            index = following + 1
+            continue
+        joined.append(line)
+        index += 1
+    return joined
+
+
+def _split_sections(pages: list[PageText], numbered_label: str | None, treaty: bool = False) -> list[_Section]:
+    detector = _HeadingDetector(numbered_label, treaty)
     sections: list[_Section] = []
     current = _Section("Preamble", "preamble", "")
+    previous = ""
     for page in pages:
-        for line in page.text.split("\n"):
+        for line in _join_split_headings(page.text.split("\n")):
             if not line.strip():
                 current.lines.append((page.page, ""))
                 continue
-            heading = detector.detect(line)
+            heading = detector.detect(line, previous)
+            previous = "" if heading else line  # a heading may directly follow another heading
             if heading is None:
                 current.lines.append((page.page, line))
                 continue
@@ -364,9 +445,9 @@ def chunk_document(
     overlap_tokens: int = 60,
 ) -> list[ChunkDraft]:
     """Split a document's pages into section-aligned chunks."""
-    label = section_label or DEFAULT_LABELS.get(doc_type, "Section")
+    label = section_label or DEFAULT_LABELS.get(doc_type, "Section")  # None: no bare numbered headings
     drafts: list[ChunkDraft] = []
-    for section in _split_sections(pages, label):
+    for section in _split_sections(pages, label, treaty=doc_type == "treaty"):
         for ref, text, page in _pack_section(section, target_tokens, max_tokens, overlap_tokens):
             drafts.append(
                 ChunkDraft(

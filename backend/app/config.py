@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     ollama_fast_model: str = ""
     llm_reasoning_effort: Literal["low", "medium", "high"] = "low"
     llm_timeout_seconds: float = 60.0
-    llm_max_retries: int = 3
+    llm_max_retries: int = 4
 
     # --- Embeddings and retrieval ------------------------------------------
     embedding_model: str = "BAAI/bge-m3"

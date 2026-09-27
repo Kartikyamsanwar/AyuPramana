@@ -84,7 +84,7 @@ class OpenAICompatibleClient:
                     break
                 retry_after = response.headers.get("retry-after")
                 if retry_after and attempt < self._max_retries:
-                    time.sleep(min(float(retry_after), 20.0))
+                    time.sleep(min(float(retry_after) + 0.5, 30.0))
                     continue
             if attempt < self._max_retries:
                 time.sleep(min(2**attempt, 10))

@@ -27,11 +27,45 @@ def _clean(text: str) -> str:
     return "\n".join(lines)
 
 
+FOOTNOTE_MARK = "† "
+_FOOTNOTE_SIZE_RATIO = 0.85
+
+
 def _load_pdf(path: Path) -> list[PageText]:
+    """Extract text line by line. Lines set in a clearly smaller font than the body text
+    (footnotes such as "1. Subs. by Act 38 of 2002…") are prefixed with FOOTNOTE_MARK, so the
+    chunker never mistakes them for section headings. Their text is kept."""
     import pymupdf
 
     with pymupdf.open(path) as pdf:
-        return [PageText(page=i + 1, text=_clean(page.get_text("text"))) for i, page in enumerate(pdf)]
+        # Content-stream order: measured better than position-sorted order on the official PDFs
+        pages = [page.get_text("dict") for page in pdf]
+
+    # Body font size = the size carrying the most characters in the document
+    weight: dict[float, int] = {}
+    for page in pages:
+        for block in page.get("blocks", []):
+            for line in block.get("lines", []):
+                for span in line.get("spans", []):
+                    size = round(span.get("size", 0), 1)
+                    weight[size] = weight.get(size, 0) + len(span.get("text", "").strip())
+    body_size = max(weight, key=weight.get) if weight else 0
+
+    result = []
+    for number, page in enumerate(pages, start=1):
+        lines = []
+        for block in page.get("blocks", []):
+            for line in block.get("lines", []):
+                spans = [s for s in line.get("spans", []) if s.get("text", "").strip()]
+                if not spans:
+                    continue
+                text = "".join(s["text"] for s in line["spans"])
+                largest = max(s.get("size", 0) for s in spans)
+                is_footnote = body_size and largest < body_size * _FOOTNOTE_SIZE_RATIO and len(text.strip()) > 3
+                lines.append(FOOTNOTE_MARK + text.strip() if is_footnote else text)
+            lines.append("")  # block boundary
+        result.append(PageText(page=number, text=_clean("\n".join(lines))))
+    return result
 
 
 def _load_html(path: Path) -> list[PageText]:

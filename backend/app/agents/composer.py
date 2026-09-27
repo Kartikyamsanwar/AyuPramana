@@ -68,11 +68,8 @@ def merge_results(results: list[SpecialistResult], language: str = "en") -> Spec
             section += f"\n\n{result.appendix}"
         parts.append(section)
 
-    skipped = [r for r in results if r.abstained]
-    if skipped:
-        topics = ", ".join(agent_title(r.agent, language).lower() for r in skipped)
-        parts.append("_" + msg("partial_answer", language).format(topics=topics) + "_")
-
+    # Specialists that found nothing are left out silently: their topics overlap, so a
+    # "couldn't answer the part about X" note next to an answer about X only confuses.
     weakest = min(answered, key=lambda r: r.confidence)
     return SpecialistResult(
         jurisdiction=answered[0].jurisdiction,

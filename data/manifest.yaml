@@ -1,7 +1,7 @@
 # AyuPramana corpus manifest — one entry per document in data/raw/.
 #
 # The assistant only knows what is listed here AND present on disk.
-# Add an entry, drop the file in data/raw/<jurisdiction>/, then run:
+# Add an entry, drop the file in data/raw/<jurisdiction>/, then run (from backend/):
 #     python scripts/ingest.py --all
 #
 # Fields
@@ -10,19 +10,133 @@
 #   jurisdiction  india | international
 #   domain        ip | abs | drug_regulation | advertising | food | cosmetics | tk
 #   doc_type      statute | rules | treaty | guideline | registry_note
-#   version_date  "YYYY-MM-DD" — the date of the text you downloaded (amendment/consolidation date)
-#   source_url    the exact official page you downloaded it from
+#   version_date  "YYYY-MM-DD" — the date of the text you downloaded (from the document itself)
+#   source_url    the exact official URL the file was downloaded from
 #   file          path relative to data/raw/
+#   section_label optional: what bare numbered headings are called (default by doc_type)
 #
-# See docs/CORPUS_SOURCES.md for the list of documents to collect.
-#
-# Example (fill every value from the real document — do not guess):
-#
-# - id: patents_act_1970
-#   title: "The Patents Act, 1970"
-#   jurisdiction: india
-#   domain: ip
-#   doc_type: statute
-#   version_date: "YYYY-MM-DD"
-#   source_url: "https://..."
-#   file: india/patents_act_1970.pdf
+# Every title and version_date below was read from the downloaded document itself
+# (India Code prints "As on <date>" on page 1). See docs/CORPUS_SOURCES.md for documents still to add.
+
+# ---------------------------------------------------------------- India (India Code)
+
+- id: patents_act_1970
+  title: "The Patents Act, 1970 (Act No. 39 of 1970)"
+  jurisdiction: india
+  domain: ip
+  doc_type: statute
+  version_date: "2026-05-05"        # "As on the 5th May, 2026"
+  source_url: "https://indiacode.gov.in/server/api/core/bitstreams/9e02bd6e-8946-4131-9eec-b1a0dd71cf80/content"
+  file: india/patents_act_1970.pdf
+
+- id: biological_diversity_act_2002
+  title: "The Biological Diversity Act, 2002"
+  jurisdiction: india
+  domain: abs
+  doc_type: statute
+  # No "As on" date printed; includes the Biological Diversity (Amendment) Act, 2023 — the latest
+  # effective date in its footnotes is "w.e.f. 1-4-2024". Replace with a dated consolidation when available.
+  version_date: "2024-04-01"
+  source_url: "https://indiacode.gov.in/server/api/core/bitstreams/bf83f6e3-2c10-4dab-9daa-da46662849d2/content"
+  file: india/biological_diversity_act_2002.pdf
+
+- id: gi_act_1999
+  title: "The Geographical Indications of Goods (Registration and Protection) Act, 1999 (Act No. 48 of 1999)"
+  jurisdiction: india
+  domain: ip
+  doc_type: statute
+  version_date: "2026-06-01"        # "As on the 1st June, 2026"
+  source_url: "https://indiacode.gov.in/server/api/core/bitstreams/55740471-35c8-4016-a122-c20c019b91ab/content"
+  file: india/gi_act_1999.pdf
+
+- id: trade_marks_act_1999
+  title: "The Trade Marks Act, 1999 (Act No. 47 of 1999)"
+  jurisdiction: india
+  domain: ip
+  doc_type: statute
+  version_date: "2026-06-01"        # "As on the 1st June, 2026"
+  source_url: "https://indiacode.gov.in/server/api/core/bitstreams/7648d2d2-4e14-40dc-80d0-db8f99716fd5/content"
+  file: india/trade_marks_act_1999.pdf
+
+- id: designs_act_2000
+  title: "The Designs Act, 2000 (Act No. 16 of 2000)"
+  jurisdiction: india
+  domain: ip
+  doc_type: statute
+  version_date: "2026-06-15"        # "As on the 15th June, 2026"
+  source_url: "https://indiacode.gov.in/server/api/core/bitstreams/94cc7bf7-96c1-4dbe-b3b3-9b3287296573/content"
+  file: india/designs_act_2000.pdf
+
+- id: copyright_act_1957
+  title: "The Copyright Act, 1957 (Act No. 14 of 1957)"
+  jurisdiction: india
+  domain: ip
+  doc_type: statute
+  version_date: "2026-06-15"        # "As on the 15th June, 2026"
+  source_url: "https://indiacode.gov.in/server/api/core/bitstreams/696240f0-b1ef-42f3-972d-9d03b1a6066f/content"
+  file: india/copyright_act_1957.pdf
+
+- id: ppvfr_act_2001
+  title: "The Protection of Plant Varieties and Farmers' Rights Act, 2001 (Act No. 53 of 2001)"
+  jurisdiction: india
+  domain: ip
+  doc_type: statute
+  version_date: "2026-09-10"        # "As on the 10th September, 2026"
+  source_url: "https://indiacode.gov.in/server/api/core/bitstreams/e04ea3dd-cccf-4562-82ee-d661b9af0c8e/content"
+  file: india/ppvfr_act_2001.pdf
+
+- id: drugs_cosmetics_act_1940
+  title: "The Drugs and Cosmetics Act, 1940 (Act No. 23 of 1940)"
+  jurisdiction: india
+  domain: drug_regulation
+  doc_type: statute
+  version_date: "2026-07-01"        # "As on the 1st July, 2026"
+  source_url: "https://indiacode.gov.in/server/api/core/bitstreams/f775a727-4f6e-4da4-9a53-71865e8468ad/content"
+  file: india/drugs_cosmetics_act_1940.pdf
+
+- id: dmr_act_1954
+  title: "The Drugs and Magic Remedies (Objectionable Advertisements) Act, 1954 (Act No. 21 of 1954)"
+  jurisdiction: india
+  domain: advertising
+  doc_type: statute
+  version_date: "2026-04-15"        # "As on the 15th April, 2026"
+  source_url: "https://indiacode.gov.in/server/api/core/bitstreams/6381cc69-0b65-4e0f-9754-71f0f3bf91b7/content"
+  file: india/dmr_act_1954.pdf
+
+# ---------------------------------------------------------------- International
+
+- id: trips_agreement
+  title: "Agreement on Trade-Related Aspects of Intellectual Property Rights (TRIPS), as amended on 23 January 2017"
+  jurisdiction: international
+  domain: ip
+  doc_type: treaty
+  version_date: "2017-01-23"        # "(as amended on 23 January 2017)"
+  source_url: "https://www.wto.org/english/docs_e/legal_e/31bis_trips_e.pdf"
+  file: international/trips_agreement.pdf
+
+- id: cbd
+  title: "Convention on Biological Diversity — Text and Annexes"
+  jurisdiction: international
+  domain: abs
+  doc_type: treaty
+  version_date: "1992-06-05"        # "opened for signature on 5 June 1992"
+  source_url: "https://www.cbd.int/doc/legal/cbd-en.pdf"
+  file: international/cbd.pdf
+
+- id: nagoya_protocol
+  title: "Nagoya Protocol on Access to Genetic Resources and the Fair and Equitable Sharing of Benefits Arising from their Utilization to the Convention on Biological Diversity"
+  jurisdiction: international
+  domain: abs
+  doc_type: treaty
+  version_date: "2010-10-29"        # adopted "on 29 October 2010, in Nagoya, Japan"
+  source_url: "https://www.cbd.int/abs/doc/protocol/nagoya-protocol-en.pdf"
+  file: international/nagoya_protocol.pdf
+
+- id: wipo_gratk_treaty_2024
+  title: "WIPO Treaty on Intellectual Property, Genetic Resources and Associated Traditional Knowledge (GRATK/DC/7)"
+  jurisdiction: international
+  domain: tk
+  doc_type: treaty
+  version_date: "2024-05-24"        # "adopted by the Diplomatic Conference", dated May 24, 2024
+  source_url: "https://www.wipo.int/edocs/mdocs/tk/en/gratk_dc/gratk_dc_7.pdf"
+  file: international/wipo_gratk_treaty_2024.pdf

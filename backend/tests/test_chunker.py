@@ -96,3 +96,55 @@ def test_html_single_long_line_section_is_split(tmp_path) -> None:
     assert len(chunks) >= 3
     assert all(c.section_ref.startswith("Section 4") for c in chunks)
     assert "ignore()" not in chunks[0].text
+
+
+# --- Layouts found in the official PDFs (sample text is fictional) ---------------------------
+def test_split_article_heading_lines_are_joined_and_paragraphs_stay_inside() -> None:
+    text = "\n".join([
+        "Preamble text of a fictional treaty.",
+        "Article",
+        "15",
+        "Access to Moonflowers",
+        "1. Each Contracting Party shall respect moonflowers.",
+        "2. Access shall be on mutually agreed fictional terms, as set out in",
+        "Article 16",
+        "paragraph 2 of this fictional Treaty.",
+        "Article 16",
+        "Sharing of Petals",
+    ])
+    chunks = chunk_document([PageText(1, text)], doc_type="treaty")
+    assert refs(chunks) == ["Preamble", "Article 15", "Article 16"]
+    assert "2. Access shall be on mutually agreed" in chunks[1].text  # numbered paragraph stays in Article 15
+    assert "paragraph 2 of this fictional Treaty." in chunks[1].text  # wrapped cross-reference is not a heading
+
+
+def test_annex_articles_are_prefixed_but_a_document_that_is_an_annex_is_not() -> None:
+    body = "Article 1\nMain text.\nArticle 2\nMore main text.\nAnnex II\nPart 1\nArticle 1\nAnnex article text."
+    assert refs(chunk_document([PageText(1, body)], doc_type="treaty"))[-1] == "Annex II, Part 1, Article 1"
+    whole = "ANNEX 1C\nAGREEMENT ON FICTIONAL WIDGETS\nArticle 1\nText."
+    assert refs(chunk_document([PageText(1, whole)], doc_type="treaty"))[-1] == "Article 1"
+
+
+def test_statute_front_matter_footnotes_and_chapter_iva() -> None:
+    text = "\n".join([
+        "LIST OF AMENDING ACTS",
+        "1. The Sample Widgets (Amendment) Act, 2090 (5 of 2090).",
+        "2. The Sample Reforms Act, 2091 (Act 7 of 2091",
+        "Sch.  for Schedule.",
+        "1. Short title.—This fictional Act may be called the Sample Act.",
+        "2. Definitions.—In this Act words mean what they say.",
+        "† 1. 1st April, 2095, vide fictional notification.",
+        "CHAPTER IVA",
+        "PROVISIONS RELATING TO FICTIONAL REMEDIES",
+        "33B. Application of Chapter IVA.—This Chapter applies to fictional remedies.",
+    ])
+    chunks = chunk_document([PageText(1, text)], doc_type="statute")
+    assert refs(chunks) == ["Preamble", "Section 1", "Section 2", "Section 33B"]
+    assert chunks[-1].text.startswith("CHAPTER IVA")
+
+
+def test_schedule_heading_with_amendment_marker() -> None:
+    text = "1. Short title.—Fictional.\n2. Definitions.—Fictional.\n1[THE SCHEDULE\n[See sections 3(d) and 14]\n1.\nMoon fever\n2.\nStar blindness"
+    chunks = chunk_document([PageText(1, text)], doc_type="statute")
+    assert refs(chunks)[-1] == "Schedule"
+    assert "Moon fever" in chunks[-1].text and "Star blindness" in chunks[-1].text

@@ -144,7 +144,7 @@ The report covers:
 ## 6. Tests
 
 ```bash
-cd backend && python -m pytest        # 70 tests; fictional corpus, fake LLM/embedder, no network
+cd backend && python -m pytest        # 76 tests; fictional corpus, fake LLM/embedder, no network
 cd frontend && npm test               # Vitest + Testing Library
 ```
 
@@ -181,9 +181,10 @@ The test corpus in `backend/tests/fixtures/` is **fictional** ("Sample Widgets A
 | Model download stuck at 0 bytes | Set `HF_DISABLE_XET=true` in `.env` (some networks block Hugging Face's Xet transfer) |
 | First question takes ~30 s | The model loads at startup in the background; wait for the log line `Embedding model loaded`, or ask a warm-up question |
 | Header says "LLM not configured" | `GROQ_API_KEY` is missing in `.env`. Restart the backend after editing `.env` |
-| `429` / rate-limit errors from Groq | Retried automatically. For evaluation use `--pause 2`, or upgrade the Groq plan |
+| `429` / rate-limit errors from Groq, or answers falling back to quoted provisions | Groq's free tier allows about 8,000 tokens per minute on `gpt-oss-120b`, roughly 1–2 answers per minute. Requests are retried automatically, and fact-checking and translation already use the fast model. For a busy demo, upgrade the Groq tier or set `GROQ_MODEL=openai/gpt-oss-20b`. For evaluation use `--pause 20` |
 | A PDF ingests with `NO TEXT` | It is a scanned image. OCR it first (e.g. `ocrmypdf in.pdf out.pdf`) or use the HTML version |
 | Wrong or odd section references | Set `section_label` on the manifest entry (e.g. `Regulation`), or check that headings in the PDF text start at line beginnings |
+| Relevant provisions not found (safe abstention on questions the corpus does cover) | Retrieval quality depends on the embedding model: `BAAI/bge-m3` (≥ 16 GB RAM) finds definitions much better than `multilingual-e5-small`. After changing it, re-run `ingest.py --all` |
 | Answers abstain too often / too rarely | Run the eval, then tune `CONFIDENCE_THRESHOLD`, `SIMILARITY_FLOOR`, `SIMILARITY_CEILING` in `.env` |
 | Start fresh | Stop the backend, delete the `storage/` folder, run `ingest.py --all` |
 | PowerShell won't run `activate` | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, or call `.venv\Scripts\python` directly |

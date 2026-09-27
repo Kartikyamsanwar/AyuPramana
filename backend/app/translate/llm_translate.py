@@ -45,7 +45,7 @@ class LLMTranslator:
     def translate_markdown(self, markdown: str, source: str, target: str) -> str:
         system = MARKDOWN_SYSTEM.format(source=LANGUAGE_NAMES[source], target=LANGUAGE_NAMES[target])
         try:
-            translated = normalize_markers(self.llm.complete(system, markdown, max_tokens=2500).strip())
+            translated = normalize_markers(self.llm.complete(system, markdown, fast=True, max_tokens=2500).strip())
         except LLMError as exc:
             raise TranslationError(str(exc)) from exc
         check_markers(markdown, translated)
