@@ -37,6 +37,8 @@ export interface AnswerBlock {
   abstained: boolean;
   abstain_reason: string | null;
   mode: "generated" | "extractive" | "abstained";
+  escalation_suggested: boolean;
+  signals: Record<string, number>;
 }
 
 export interface ChatResponse {

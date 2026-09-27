@@ -26,6 +26,17 @@ MESSAGES: dict[str, dict[str, str]] = {
         "en": "No documents have been loaded for this jurisdiction yet, so I can't answer. "
         "(Administrators: add documents to data/raw/ and run the ingest script.)",
     },
+    "abstain_unsupported": {
+        "en": "I drafted an answer, but my fact-check could not confirm it against the sources, so I've withheld "
+        "it. Please check the related provisions below or talk to an IP facilitator.",
+    },
+    "possibly_related": {
+        "en": "Possibly related provisions you can read:",
+    },
+    "escalation_recorded": {
+        "en": "Your request for an IP facilitator has been recorded (reference {reference}). Quote this reference "
+        "when you contact the IP facilitation desk. Please don't share personal details in this chat.",
+    },
     "extractive_intro": {
         "en": "The AI writer is unavailable right now, so here are the most relevant provisions, quoted from the "
         "sources:",

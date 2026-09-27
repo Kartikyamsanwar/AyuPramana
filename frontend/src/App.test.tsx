@@ -37,6 +37,8 @@ const block = (jurisdiction: "india" | "international") => ({
   abstained: false,
   abstain_reason: null,
   mode: "generated" as const,
+  escalation_suggested: false,
+  signals: {},
 });
 
 function mockApi(chat: ChatResponse) {

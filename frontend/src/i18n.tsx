@@ -43,6 +43,12 @@ const en = {
   openOfficialSource: "Open official source",
   noSourceUrl: "No source link recorded in the manifest.",
   sourceText: "Source text",
+  talkToFacilitator: "Talk to an IP facilitator",
+  escalateNoteLabel: "What do you need help with? (optional)",
+  escalateNoPii: "Please don't include names, phone numbers or other personal details.",
+  sendRequest: "Send request",
+  cancel: "Cancel",
+  requestFailed: "Couldn't record the request. Please try again.",
 };
 
 export type StringKey = keyof typeof en;

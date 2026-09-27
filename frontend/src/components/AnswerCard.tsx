@@ -1,16 +1,21 @@
 import { useT } from "../i18n";
-import type { AnswerBlock, Citation } from "../types";
+import type { AnswerBlock, Citation, Language } from "../types";
 import { ConfidenceBadge } from "./ConfidenceBadge";
+import { EscalateButton } from "./EscalateButton";
 import { Markdown } from "./Markdown";
 
 /** One jurisdiction's answer: text with citation chips, source list, confidence and disclaimer. */
 export function AnswerCard({
   block,
   disclaimer,
+  queryId,
+  language,
   onCite,
 }: {
   block: AnswerBlock;
   disclaimer: string;
+  queryId: number | null;
+  language: Language;
   onCite: (citation: Citation) => void;
 }) {
   const t = useT();
@@ -56,7 +61,15 @@ export function AnswerCard({
         </div>
       )}
 
-      <footer className="mt-auto border-t border-stone-100 px-4 py-2 text-xs text-stone-500">{disclaimer}</footer>
+      <footer className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-stone-100 px-4 py-2">
+        <p className="text-xs text-stone-500">{disclaimer}</p>
+        <EscalateButton
+          queryId={queryId}
+          jurisdiction={block.jurisdiction}
+          language={language}
+          emphasised={block.escalation_suggested}
+        />
+      </footer>
     </article>
   );
 }

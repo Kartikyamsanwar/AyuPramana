@@ -12,7 +12,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 from app.ingest.loaders import SUPPORTED_SUFFIXES
 from app.ingest.manifest import ManifestError, load_manifest
-from app.schemas import ChatRequest, ChatResponse, CorpusStatus, HealthResponse, LlmStatus, SourcesResponse
+from app.guardrails.messages import msg
+from app.guardrails.pii import scrub
+from app.schemas import (
+    ChatRequest,
+    ChatResponse,
+    CorpusStatus,
+    EscalateRequest,
+    EscalateResponse,
+    HealthResponse,
+    LlmStatus,
+    SourcesResponse,
+)
 from app.services import Services, build_services
 from app.sources import list_sources
 
@@ -72,6 +83,21 @@ def create_app(services: Services | None = None) -> FastAPI:
     async def chat(body: ChatRequest, svc: Services = Depends(get_services)) -> ChatResponse:
         """Answer a question with cited, per-jurisdiction blocks."""
         return await run_in_threadpool(svc.chat.handle, body)
+
+    @app.post("/api/escalate", response_model=EscalateResponse)
+    def escalate(body: EscalateRequest, svc: Services = Depends(get_services)) -> EscalateResponse:
+        """Record a request for a human IP facilitator. Nothing is sent anywhere; it appears on the admin page."""
+        escalation_id = svc.audit.record_escalation(
+            session_id=body.session_id,
+            query_id=body.query_id,
+            jurisdiction=body.jurisdiction,
+            language=body.language,
+            scrubbed_note=scrub(body.note).text,
+        )
+        reference = f"ESC-{escalation_id:05d}"
+        return EscalateResponse(
+            status="recorded", reference=reference, message=msg("escalation_recorded", body.language).format(reference=reference)
+        )
 
     @app.get("/api/sources", response_model=SourcesResponse)
     def sources(svc: Services = Depends(get_services)) -> SourcesResponse:

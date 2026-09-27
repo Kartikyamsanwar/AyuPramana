@@ -68,6 +68,16 @@ class VectorStore:
             return set()
         return set(self._collection.get(ids=list(ids), include=[])["ids"])
 
+    def similarities(self, embedding: Sequence[float], ids: Sequence[str]) -> dict[str, float]:
+        """Cosine similarity between a query vector and specific chunks (vectors are normalised)."""
+        if not ids:
+            return {}
+        stored = self._collection.get(ids=list(ids), include=["embeddings"])
+        return {
+            chunk_id: float(sum(a * b for a, b in zip(embedding, vector)))
+            for chunk_id, vector in zip(stored["ids"], stored["embeddings"])
+        }
+
     def count(self) -> int:
         return self._collection.count()
 

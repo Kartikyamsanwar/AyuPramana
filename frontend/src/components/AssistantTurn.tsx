@@ -9,7 +9,14 @@ export function AssistantTurn({ response, onCite }: { response: ChatResponse; on
   return (
     <div className={`grid gap-3 ${blocks.length > 1 ? "md:grid-cols-2" : ""}`}>
       {blocks.map((block) => (
-        <AnswerCard key={block.jurisdiction} block={block} disclaimer={response.disclaimer} onCite={onCite} />
+        <AnswerCard
+          key={block.jurisdiction}
+          block={block}
+          disclaimer={response.disclaimer}
+          queryId={response.query_id}
+          language={response.language}
+          onCite={onCite}
+        />
       ))}
     </div>
   );

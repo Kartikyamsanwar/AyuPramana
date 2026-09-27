@@ -1,5 +1,5 @@
 /** Thin wrappers around the backend REST API. All paths are relative, so the dev proxy / nginx handle routing. */
-import type { ChatRequest, ChatResponse, HealthInfo, SourceDocument } from "./types";
+import type { ChatRequest, ChatResponse, HealthInfo, Language, SingleJurisdiction, SourceDocument } from "./types";
 
 async function getJson<T>(path: string): Promise<T> {
   const response = await fetch(path);
@@ -20,6 +20,14 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
 export const fetchHealth = () => getJson<HealthInfo>("/api/health");
 export const fetchSources = () => getJson<{ documents: SourceDocument[]; manifest_error: string | null }>("/api/sources");
 export const sendChat = (request: ChatRequest) => postJson<ChatResponse>("/api/chat", request);
+
+export const escalate = (body: {
+  session_id: string;
+  query_id: number | null;
+  jurisdiction: SingleJurisdiction;
+  language: Language;
+  note: string;
+}) => postJson<{ status: string; reference: string; message: string }>("/api/escalate", body);
 
 /** Anonymous id for this browser tab — never tied to a person. */
 export function getSessionId(): string {

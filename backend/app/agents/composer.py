@@ -12,7 +12,7 @@ ABSTAIN_MESSAGE_KEYS = {
     "no_sources": "abstain_no_sources",
     "insufficient_evidence": "abstain_insufficient",
     "no_citations": "abstain_insufficient",
-    "unsupported": "abstain_insufficient",
+    "unsupported": "abstain_unsupported",
     "low_confidence": "abstain_low_confidence",
 }
 
@@ -46,24 +46,34 @@ def to_citation(marker: int, item: RetrievedChunk, snippet_chars: int = 2000) ->
 
 
 def to_block(result: SpecialistResult, threshold: float, language: str = "en") -> AnswerBlock:
+    citations = [to_citation(i, item) for i, item in enumerate(result.citations, start=1)]
     if result.abstained:
         markdown = msg(ABSTAIN_MESSAGE_KEYS.get(result.abstain_reason or "", "abstain_insufficient"), language)
+        if citations:
+            # Pointers only — clearly labelled, not presented as an answer
+            related = "\n".join(f"- {c.doc_title} — {c.section_ref} [S{c.marker}]" for c in citations)
+            markdown += f"\n\n{msg('possibly_related', language)}\n\n{related}"
         return AnswerBlock(
             jurisdiction=result.jurisdiction,
             markdown=markdown,
-            citations=[],
+            citations=citations,
             confidence=round(result.confidence, 3),
             confidence_label="low",
             abstained=True,
             abstain_reason=result.abstain_reason,
             mode="abstained",
+            escalation_suggested=True,
+            signals=result.signals,
         )
+    label = confidence_label(result.confidence, threshold)
     return AnswerBlock(
         jurisdiction=result.jurisdiction,
         markdown=result.answer_markdown,
-        citations=[to_citation(i, item) for i, item in enumerate(result.citations, start=1)],
+        citations=citations,
         confidence=round(result.confidence, 3),
-        confidence_label=confidence_label(result.confidence, threshold),
+        confidence_label=label,
         abstained=False,
         mode=result.mode,
+        escalation_suggested=label == "low",
+        signals=result.signals,
     )

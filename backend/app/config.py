@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=REPO_ROOT / ".env",
         env_file_encoding="utf-8",
+        env_ignore_empty=True,  # "KEY=" in .env means "use the default"
         extra="ignore",
     )
 
@@ -51,10 +52,15 @@ class Settings(BaseSettings):
     # --- Embeddings and retrieval ------------------------------------------
     embedding_model: str = "BAAI/bge-m3"
     embedding_device: str = "cpu"
+    # Some networks stall Hugging Face's Xet downloads at 0 bytes; true = use plain HTTPS downloads
+    hf_disable_xet: bool = False
     reranker_enabled: bool = False
     reranker_model: str = "BAAI/bge-reranker-v2-m3"
     retrieval_top_k: int = 6
     retrieval_candidates: int = 30
+    # Map raw cosine similarity to 0-1 relevance; blank = sensible default for the model
+    similarity_floor: float | None = None
+    similarity_ceiling: float | None = None
     chunk_target_tokens: int = 600
     chunk_max_tokens: int = 800
     chunk_overlap_tokens: int = 60

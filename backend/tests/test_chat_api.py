@@ -43,8 +43,10 @@ def test_both_returns_two_separate_blocks(make_client) -> None:
 def test_insufficient_evidence_abstains(make_client) -> None:
     client, _ = make_client(llm=FakeLLM(lambda *_: "INSUFFICIENT_EVIDENCE"))
     block = ask(client)["answers"]["india"]
-    assert block["abstained"] and block["citations"] == []
-    assert block["abstain_reason"] == "insufficient_evidence"
+    assert block["abstained"] and block["abstain_reason"] == "insufficient_evidence"
+    # Sources are offered only as clearly labelled pointers, never as an answer
+    assert block["markdown"].startswith("The documents I retrieved don't clearly answer")
+    assert "Possibly related provisions" in block["markdown"]
 
 
 def test_answer_without_citations_abstains(make_client) -> None:
@@ -62,10 +64,11 @@ def test_invented_marker_is_dropped(make_client) -> None:
 
 
 def test_no_llm_falls_back_to_quoting_sources(make_client) -> None:
-    client, _ = make_client(llm=None)
-    block = ask(client)["answers"]["india"]
+    client, _ = make_client(llm=None, confidence_threshold=0.2)
+    block = ask(client, "registration of widgets registrar application")["answers"]["india"]
     assert block["mode"] == "extractive"
     assert block["citations"]
+    assert block["confidence"] <= 0.74  # quotes are unverified, so never "High"
 
 
 def test_empty_jurisdiction_abstains(make_client) -> None:

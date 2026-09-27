@@ -66,6 +66,8 @@ class AnswerBlock(BaseModel):
     abstained: bool
     abstain_reason: str | None = None
     mode: Literal["generated", "extractive", "abstained"] = "generated"
+    escalation_suggested: bool = False
+    signals: dict[str, float] = Field(default_factory=dict, description="Confidence components (for transparency)")
 
 
 class ChatResponse(BaseModel):
@@ -73,6 +75,21 @@ class ChatResponse(BaseModel):
     answers: dict[str, AnswerBlock]
     disclaimer: str
     language: LanguageCode
+
+
+# --- Escalation ---------------------------------------------------------------
+class EscalateRequest(BaseModel):
+    session_id: str = Field(pattern=SESSION_ID_PATTERN)
+    query_id: int | None = None
+    jurisdiction: Literal["india", "international"] | None = None
+    language: LanguageCode = "en"
+    note: str = Field(default="", max_length=1000)
+
+
+class EscalateResponse(BaseModel):
+    status: Literal["recorded"]
+    reference: str
+    message: str
 
 
 # --- Sources ----------------------------------------------------------------
