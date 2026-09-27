@@ -8,17 +8,18 @@ from typing import Sequence, TypeVar
 T = TypeVar("T")
 
 MARKER_RE = re.compile(r"\[S(\d+)\]")
-_GROUPED_RE = re.compile(r"\[(S\d+(?:\s*[,;]\s*S?\d+)+)\]")
+# Variants models produce: "[ S2 ]", "[s2]", "[S 2]", "【S2】", "[S1, S3]", "[S1; S3]"
+_LOOSE_RE = re.compile(r"[\[【]\s*([Ss]\s*\d+(?:\s*[,;]\s*[Ss]?\s*\d+)*)\s*[\]】]")
 
 
-def _expand_grouped(text: str) -> str:
-    """"[S1, S3]" → "[S1][S3]" so every marker has one shape."""
+def normalize_markers(text: str) -> str:
+    """Normalise every marker variant to the one shape "[S1][S3]"."""
 
     def repl(match: re.Match[str]) -> str:
         numbers = re.findall(r"\d+", match.group(1))
         return "".join(f"[S{n}]" for n in numbers)
 
-    return _GROUPED_RE.sub(repl, text)
+    return _LOOSE_RE.sub(repl, text)
 
 
 def renumber_citations(markdown: str, sources: Sequence[T]) -> tuple[str, list[T]]:
@@ -27,7 +28,7 @@ def renumber_citations(markdown: str, sources: Sequence[T]) -> tuple[str, list[T
     Returns the rewritten markdown and the list of cited sources (index i ↔ marker [S{i+1}]).
     Markers pointing outside `sources` are removed (the model must not cite what it wasn't given).
     """
-    markdown = _expand_grouped(markdown)
+    markdown = normalize_markers(markdown)
     mapping: dict[int, int] = {}
     cited: list[T] = []
 

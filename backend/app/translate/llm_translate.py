@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from typing import Sequence
 
+from app.agents.citations import normalize_markers
 from app.llm.base import LLMClient, LLMError, parse_json_object
 from app.translate.base import LANGUAGE_NAMES, TranslationError, check_markers
 
@@ -44,7 +45,7 @@ class LLMTranslator:
     def translate_markdown(self, markdown: str, source: str, target: str) -> str:
         system = MARKDOWN_SYSTEM.format(source=LANGUAGE_NAMES[source], target=LANGUAGE_NAMES[target])
         try:
-            translated = self.llm.complete(system, markdown, max_tokens=2500).strip()
+            translated = normalize_markers(self.llm.complete(system, markdown, max_tokens=2500).strip())
         except LLMError as exc:
             raise TranslationError(str(exc)) from exc
         check_markers(markdown, translated)

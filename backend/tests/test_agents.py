@@ -152,3 +152,11 @@ def test_stream_emits_status_block_and_done(make_client) -> None:
 def test_basic_chat_still_works_via_general_agent(make_client) -> None:
     client, _ = make_client(llm=FakeLLM(json_responder=routing_responder("in_scope", ["general_regulatory"])))
     assert not ask(client)["answers"]["india"]["abstained"]
+
+
+def test_off_topic_routing_is_overruled_when_corpus_clearly_covers_it(make_client) -> None:
+    client, _ = make_client(llm=FakeLLM(json_responder=routing_responder("off_topic")))
+    covered = post(client, message="Renewal of registration of a widget every seven moons on payment of sea shells")
+    assert not covered["answers"]["india"]["abstained"]
+    unrelated = post(client, message="Who won the cricket world cup?")
+    assert unrelated["answers"]["india"]["abstain_reason"] == "off_topic"

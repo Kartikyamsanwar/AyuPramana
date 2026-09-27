@@ -102,3 +102,10 @@ def test_invalid_request_is_rejected(make_client) -> None:
     client, _ = make_client()
     response = client.post("/api/chat", json={"session_id": "x", "message": "", "jurisdiction": "mars"})
     assert response.status_code == 422
+
+
+def test_loose_marker_formats_are_normalised(make_client) -> None:
+    client, _ = make_client(llm=FakeLLM(answer="Widgets are registered with the registrar [ S1 ]. Renewal applies [s2, S3]."))
+    block = ask(client)["answers"]["india"]
+    assert "[S1]" in block["markdown"] and "[ S1 ]" not in block["markdown"]
+    assert len(block["citations"]) == 3

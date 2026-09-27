@@ -33,6 +33,8 @@ from app.schemas import AnswerBlock, ChatRequest, ChatResponse, QuickReply
 from app.translate.base import TranslationError, Translator, has_devanagari
 
 STARTERS = ("starter_patent", "starter_plant", "starter_classify")
+# Calibrated relevance (0-1) above which an "off_topic" routing is overruled by the corpus
+OFF_TOPIC_OVERRIDE_RELEVANCE = 0.8
 
 
 def jurisdictions_for(choice: str) -> list[str]:
@@ -154,6 +156,10 @@ class ChatService:
         if route.scope == "greeting":
             starters = [QuickReply(id=f"starter:{key}", label=msg(key, language)) for key in STARTERS]
             return finish(follow_up=msg("greeting", language), quick_replies=starters)
+        if route.scope == "off_topic" and self._corpus_clearly_covers(question, jurisdictions):
+            # The router can't veto what the documents plainly cover: answer as a general question
+            route = Route("in_scope", ["general_regulatory"], route.search_query or question, route.method)
+            trace.route = route
         if route.scope in ("medical_advice", "off_topic"):
             reason = "out_of_scope_medical" if route.scope == "medical_advice" else "off_topic"
             results = {j: self.answerer.abstain(j, reason, "router", []) for j in jurisdictions}
@@ -180,6 +186,14 @@ class ChatService:
         return finish(self._parallel(jurisdictions, run_for), intents, notice=notice)
 
     # ------------------------------------------------------------------
+    def _corpus_clearly_covers(self, question: str, jurisdictions: list[str]) -> bool:
+        """Second opinion on an "off_topic" routing: is there a strongly relevant provision anyway?"""
+        return any(
+            hit.relevance >= OFF_TOPIC_OVERRIDE_RELEVANCE
+            for jurisdiction in jurisdictions
+            for hit in self.answerer.retriever.search(question, jurisdiction, top_k=1)
+        )
+
     def _to_english(self, text: str, language: str, emit: EventSink) -> str:
         """Hindi/Marathi questions are searched in English, the corpus language.
         If translation fails, the original is used (the multilingual embeddings still match it)."""

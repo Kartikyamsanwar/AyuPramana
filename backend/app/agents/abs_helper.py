@@ -7,8 +7,9 @@ from app.agents.grounded import GroundedAnswerer
 from app.agents.types import SpecialistResult
 
 TASK = (
-    "The user plans to use biological resources and/or associated traditional knowledge. First, in one sentence, say "
-    "when the obligations in the SOURCES apply. Then give a compliance checklist as Markdown task items "
+    "The user asks about using biological resources and/or associated traditional knowledge. If the SOURCES do not "
+    "cover the resource or activity the user asked about, reply INSUFFICIENT_EVIDENCE. Otherwise, first say in one "
+    "sentence when the obligations in the SOURCES apply. Then give a compliance checklist as Markdown task items "
     "('- [ ] ...'), one obligation per item (for example prior approval, information to provide, benefit sharing), "
     "each ending with its citation marker. Include only obligations stated in the SOURCES."
 )

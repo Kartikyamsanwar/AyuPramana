@@ -97,10 +97,10 @@ class GroundedAnswerer:
             log.warning("LLM unavailable, using extractive answer: %s", exc)
             return self.extractive(jurisdiction, retrieved, agent)
         emit("status", {"stage": "verifying", "jurisdiction": jurisdiction})
-        return self.finalize(draft, jurisdiction, retrieved, agent)
+        return self.finalize(draft, jurisdiction, retrieved, agent, question)
 
     def finalize(
-        self, draft: str, jurisdiction: str, retrieved: list[RetrievedChunk], agent: str
+        self, draft: str, jurisdiction: str, retrieved: list[RetrievedChunk], agent: str, question: str = ""
     ) -> SpecialistResult:
         """Citation check → verification → confidence → answer or abstention."""
         if INSUFFICIENT in draft:
@@ -112,10 +112,12 @@ class GroundedAnswerer:
         supported: float | None = None
         if self.verify and self.llm is not None:
             try:
-                check = verify_answer(self.llm, markdown, cited)
+                check = verify_answer(self.llm, markdown, cited, question)
             except LLMError as exc:
                 log.warning("Citation verification unavailable: %s", exc)
             else:
+                if not check.on_point:  # accurate about the sources, but the sources are about something else
+                    return self.abstain(jurisdiction, "not_on_point", agent, retrieved, related=True)
                 supported = check.supported_fraction
                 markdown, cited = renumber_citations(check.markdown, cited)
                 if supported < MIN_SUPPORTED_FRACTION or not cited:

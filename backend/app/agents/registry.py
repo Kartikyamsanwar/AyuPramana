@@ -16,8 +16,8 @@ from app.agents.types import SpecialistResult
 from app.guardrails.messages import msg
 
 TASK = (
-    "Explain, using only the SOURCES, which authority or office handles what the user wants to do and what the "
-    "SOURCES say about the application procedure (who applies, where, and what must be submitted). "
+    "Explain what the SOURCES say about the application procedure for what the user wants to do: who applies, "
+    "to which authority or office (only if the SOURCES name it), and what must be submitted. "
     "Do not invent form numbers, fees, time limits or web addresses."
 )
 

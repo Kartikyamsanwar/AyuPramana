@@ -144,7 +144,7 @@ The report covers:
 ## 6. Tests
 
 ```bash
-cd backend && python -m pytest        # 67 tests; fictional corpus, fake LLM/embedder, no network
+cd backend && python -m pytest        # 70 tests; fictional corpus, fake LLM/embedder, no network
 cd frontend && npm test               # Vitest + Testing Library
 ```
 

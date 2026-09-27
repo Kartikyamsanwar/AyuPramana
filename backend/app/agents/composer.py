@@ -18,6 +18,7 @@ ABSTAIN_MESSAGE_KEYS = {
     "no_sources": "abstain_no_sources",
     "insufficient_evidence": "abstain_insufficient",
     "no_citations": "abstain_insufficient",
+    "not_on_point": "abstain_insufficient",
     "unsupported": "abstain_unsupported",
     "low_confidence": "abstain_low_confidence",
     "out_of_scope_medical": "out_of_scope_medical",

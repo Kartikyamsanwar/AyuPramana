@@ -58,8 +58,9 @@ def statement_ids(user_prompt: str) -> list[int]:
     return [int(n) for n in re.findall(r"^(\d+)\. ", statements, flags=re.MULTILINE)]
 
 
-def verification_json(user_prompt: str, unsupported: set[int] = frozenset()) -> str:
-    return json.dumps({"results": [{"id": i, "supported": i not in unsupported} for i in statement_ids(user_prompt)]})
+def verification_json(user_prompt: str, unsupported: set[int] = frozenset(), on_point: bool = True) -> str:
+    results = [{"id": i, "supported": i not in unsupported} for i in statement_ids(user_prompt)]
+    return json.dumps({"on_point": on_point, "results": results})
 
 
 def routing_responder(scope: str = "in_scope", intents: list[str] | None = None, unsupported: set[int] = frozenset()):

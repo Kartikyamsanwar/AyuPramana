@@ -107,3 +107,13 @@ def test_escalation_is_recorded_without_pii(make_client) -> None:
     with services.session_factory() as session:
         row = session.scalars(select(Escalation)).one()
     assert row.query_id == query_id and "9876543210" not in row.note
+
+
+def test_answer_about_a_different_subject_abstains(make_client) -> None:
+    """Every sentence may be supported, but if the sources are about something else, don't answer."""
+    llm = FakeLLM(json_responder=lambda s, user, kw: verification_json(user, on_point=False))
+    client, _ = make_client(llm=llm)
+    block = ask(client)["answers"]["india"]
+    assert block["abstained"] and block["abstain_reason"] == "not_on_point"
+    verify_prompt = next(user for system, user, kw in llm.calls if "on_point" in system)
+    assert verify_prompt.startswith("QUESTION: How are widgets registered?")

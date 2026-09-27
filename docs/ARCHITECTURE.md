@@ -34,7 +34,7 @@ flowchart TD
     RET --> DB[(SQLite: documents, versions,<br/>chunks, audit log)]
     RET --> VS[(ChromaDB vectors)]
     RET --> GEN2[Grounded draft<br/>LLM may use only the numbered sources;<br/>every sentence ends with a citation marker]
-    GEN2 --> VER[Citation verification<br/>second LLM pass fact-checks each statement;<br/>unsupported ones are removed]
+    GEN2 --> VER[Citation verification<br/>second LLM pass: are the sources on the asked subject?<br/>is each statement supported? unsupported ones are removed]
     VER --> CONF[Confidence score<br/>0.45 retrieval + 0.15 agreement + 0.40 verification]
     CONF -->|below threshold| ABST[Abstain + related provisions<br/>+ offer IP facilitator]
     CONF -->|ok| COMP[Composer<br/>one cited block per jurisdiction]
@@ -66,6 +66,8 @@ flowchart TD
 - The LLM sees only retrieved provisions and is told to reply `INSUFFICIENT_EVIDENCE` if they don't answer the question.
 - Hybrid retrieval combines keyword and semantic search.
 - A second LLM pass fact-checks each statement and removes unsupported ones.
+- The same pass checks that the sources are on the subject asked about (the same product, resource or activity). An
+  answer that is accurate about a different subject is withheld.
 
 **2. Citation correctness**
 - Citation markers are validated against the sources actually supplied. Invented markers are dropped.
@@ -76,6 +78,7 @@ flowchart TD
 - the corpus is empty for that jurisdiction,
 - nothing relevant is retrieved,
 - the LLM finds the evidence insufficient,
+- the sources turn out to be about a different subject,
 - no valid citation remains,
 - fewer than half of the statements pass the fact-check, or
 - confidence falls under `CONFIDENCE_THRESHOLD`.
