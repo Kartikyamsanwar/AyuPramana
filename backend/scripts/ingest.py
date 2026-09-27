@@ -56,7 +56,10 @@ def main() -> int:
         print(f"No entries in {settings.manifest_path}. Add documents first (see docs/CORPUS_SOURCES.md).")
         return 0
 
-    print(f"Embedding model: {settings.embedding_model}  (first run downloads it)")
+    if settings.embedding_provider == "gemini":
+        print(f"Embeddings: Gemini API ({settings.gemini_embedding_model}, {settings.gemini_embedding_dimensions} dims)")
+    else:
+        print(f"Embedding model: {settings.embedding_model}  (first run downloads it)")
     services = build_services(settings, llm=None)
     results = services.ingestor().ingest(doc_ids=args.doc, force=args.force)
 

@@ -26,6 +26,8 @@ def default_similarity_range(model_name: str) -> tuple[float, float]:
     SIMILARITY_FLOOR / SIMILARITY_CEILING in .env after running scripts/eval.py.
     """
     name = model_name.lower()
+    if name.startswith("gemini/"):
+        return 0.45, 0.80  # provisional; calibrate with scripts/eval.py
     if "e5" in name:
         return 0.75, 0.88
     if "bge-m3" in name:

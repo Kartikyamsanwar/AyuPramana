@@ -1,0 +1,21 @@
+# Render Blueprint: one free web service (UI + API). See docs/DEPLOY.md.
+services:
+  - type: web
+    name: ayupramana
+    runtime: docker
+    plan: free
+    dockerfilePath: ./deploy/render/Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false   # entered in the Render dashboard, never committed
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: LLM_PROVIDER
+        value: groq
+      - key: EMBEDDING_PROVIDER
+        value: gemini
+      - key: ADMIN_MODE
+        value: "false"

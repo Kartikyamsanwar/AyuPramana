@@ -24,6 +24,7 @@ from app.llm.base import LLMClient
 from app.llm.factory import build_llm
 from app.retrieval.bm25 import BM25Search
 from app.retrieval.embeddings import Embedder, SentenceTransformerEmbedder
+from app.retrieval.gemini_embeddings import GeminiEmbedder
 from app.retrieval.reranker import CrossEncoderReranker, Reranker
 from app.retrieval.search import Retriever, default_similarity_range
 from app.retrieval.vector_store import VectorStore
@@ -51,6 +52,14 @@ class Services:
         return Ingestor(self.settings, self.session_factory, self.vector_store, self.embedder)
 
 
+def build_embedder(settings: Settings) -> Embedder:
+    if settings.embedding_provider == "gemini":
+        return GeminiEmbedder(
+            settings.gemini_api_key, settings.gemini_embedding_model, settings.gemini_embedding_dimensions
+        )
+    return SentenceTransformerEmbedder(settings.embedding_model, settings.embedding_device)
+
+
 def build_services(
     settings: Settings,
     *,
@@ -62,7 +71,7 @@ def build_services(
         os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
     session_factory = make_session_factory(settings.sqlite_path)
     repository = CorpusRepository(session_factory)
-    embedder = embedder or SentenceTransformerEmbedder(settings.embedding_model, settings.embedding_device)
+    embedder = embedder or build_embedder(settings)
     vector_store = VectorStore(settings.chroma_dir, embedder.model_name)
 
     if reranker is _UNSET:

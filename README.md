@@ -98,7 +98,7 @@ its chunk count and version hash.
 **Frontend** (from `frontend/`): `npm run dev`, then open http://localhost:5173. The dev server forwards `/api` to
 port 8000.
 
-**Hosting (free):** see [docs/DEPLOY.md](docs/DEPLOY.md) — Hugging Face Spaces, one container.
+**Hosting (free):** see [docs/DEPLOY.md](docs/DEPLOY.md). Render free plan, one container, Gemini embeddings.
 
 **Docker** (both services):
 

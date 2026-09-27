@@ -50,7 +50,12 @@ class Settings(BaseSettings):
     llm_max_retries: int = 4
 
     # --- Embeddings and retrieval ------------------------------------------
+    # local = sentence-transformers on this machine; gemini = Google's embeddings API (low-memory hosting)
+    embedding_provider: Literal["local", "gemini"] = "local"
     embedding_model: str = "BAAI/bge-m3"
+    gemini_api_key: str = ""
+    gemini_embedding_model: str = "gemini-embedding-2"
+    gemini_embedding_dimensions: int = 768
     embedding_device: str = "cpu"
     # Some networks stall Hugging Face's Xet downloads at 0 bytes; true = use plain HTTPS downloads
     hf_disable_xet: bool = False

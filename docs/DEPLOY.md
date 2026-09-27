@@ -1,54 +1,55 @@
-# Deploying AyuPramana on Hugging Face Spaces (free)
+# Deploying AyuPramana
 
-The free "CPU basic" Space (2 vCPU, 16 GB RAM) runs AyuPramana in one Docker container. The FastAPI backend
-serves the built React UI and the API on the same URL.
+## Render (free plan) — recommended
 
-The Space contains only two files from [`deploy/huggingface/`](../deploy/huggingface/): `Dockerfile` and
-`README.md`. At build time the Dockerfile:
-1. clones this GitHub repository,
-2. builds the UI,
-3. installs the backend,
-4. downloads the embedding model,
-5. ingests `data/raw/`.
+A free Render web service has 512 MB RAM. To fit, the hosted app gets its embeddings from **Google's Gemini
+embeddings API** (`EMBEDDING_PROVIDER=gemini`) instead of loading a model locally. It needs no PyTorch and uses
+about 125 MB of active memory. One Docker container serves both the UI and the API.
 
-The app therefore starts with the search index ready.
+The build ([`deploy/render/Dockerfile`](../deploy/render/Dockerfile)):
+1. builds the UI,
+2. installs the light server requirements ([`backend/requirements-core.txt`](../backend/requirements-core.txt)),
+3. ingests `data/raw/` using Gemini embeddings.
 
-## One-time setup (about 5 minutes)
+The app therefore starts ready.
 
-1. **Create a free account** at huggingface.co.
-2. **Create a Space**: huggingface.co/new-space
-   - Space name: `AyuPramana`
-   - SDK: **Docker** → template **Blank**
-   - Hardware: **CPU basic (free)**
-   - Visibility: **Public**, so judges can open it
-3. **Add the Groq key as a secret**: in the Space open **Settings → Variables and secrets → New secret**.
-   - Name: `GROQ_API_KEY`
-   - Value: your key
+### You need two free API keys
 
-   Never put the key in a file.
-4. **Upload the two files**: in the Space open **Files → Add file → Upload files**, drop in `deploy/huggingface/Dockerfile`
-   and `deploy/huggingface/README.md` (replace the existing README), and commit.
-5. Wait for the build (**about 15 minutes the first time**; watch the **Logs** tab), then open
-   `https://<your-username>-ayupramana.hf.space`.
+- **Groq**: you already have it. It writes the answers.
+- **Gemini**: from Google AI Studio (aistudio.google.com → *Get API key*). It powers search, and it is free.
 
-## Updating the live app
+### One-time setup (about 10 minutes)
 
-Push to `main` on GitHub, then in the Space choose **Settings → Factory rebuild**. The build fetches the latest commit.
+1. Sign up at **render.com** with your GitHub account.
+2. **New → Blueprint** → pick the `AyuPramana` repository. Render reads [`render.yaml`](../render.yaml) and proposes
+   one free web service called `ayupramana`.
+3. When asked for environment values, paste your keys into **`GROQ_API_KEY`** and **`GEMINI_API_KEY`**.
+   They are stored by Render, never in the repository.
+4. Click **Apply**. The first build takes about 10 minutes, and you can watch it under **Logs**. The app is then live at
+   `https://ayupramana.onrender.com`, or a similar URL that Render shows you.
 
-## Public-deployment defaults
+Every push to `main` redeploys automatically.
 
-These are set in the Dockerfile:
-- `ADMIN_MODE=false`: the Audit page has no login, so it stays off in public.
-- `LLM_PROVIDER=groq`.
-- Embedding model: `multilingual-e5-small`, for a fast build. With 16 GB RAM you can set
-  `EMBEDDING_MODEL=BAAI/bge-m3` in the Dockerfile for better retrieval; the build takes longer.
-- Optional secrets: `BHASHINI_USER_ID`, `BHASHINI_API_KEY`, `BHASHINI_PIPELINE_ID` for Bhashini translation.
+### Good to know on the free plan
 
-## Good to know
+- **Sleeping.** Render stops a free service after 15 minutes without visitors, and the next visit takes about a minute
+  to wake it. Open the link a few minutes before judging.
+- **Audit log resets.** The audit log and feedback live inside the container and reset on every deploy or restart.
+  The Audit page is off in public anyway (`ADMIN_MODE=false`).
+- **Groq free-tier limits** still apply (about 8,000 tokens per minute on the main model).
+- **Gemini free-tier limits** apply to searches too. One search is one small embedding request.
 
-- **Sleeping.** A free Space sleeps after a period without visitors. The first visit then takes about a minute to wake it.
-  Open the link yourself a few minutes before judging.
-- **Audit log resets.** The audit log and feedback are stored inside the container, so they reset when the Space
-  restarts or rebuilds.
-- **Groq free-tier limits.** These still apply (about 8,000 tokens per minute on the main model). Under heavy use,
-  answers may fall back to quoted provisions.
+## Local development keeps the local model
+
+Your laptop keeps `EMBEDDING_PROVIDER=local` (sentence-transformers) with `pip install -r requirements.txt`. The two
+modes keep separate search indexes, so switching between them is safe. After switching, run
+`python scripts/ingest.py --all` once.
+
+## Alternative: Hugging Face Spaces (needs Hugging Face PRO)
+
+Hugging Face now requires a paid PRO plan to create Docker Spaces. If you have one:
+1. Create a Docker Space.
+2. Add `GROQ_API_KEY` as a secret.
+3. Upload the two files in [`deploy/huggingface/`](../deploy/huggingface/).
+
+That Space runs the full local-model setup (16 GB RAM).
