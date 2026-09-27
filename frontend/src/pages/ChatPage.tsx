@@ -1,45 +1,123 @@
-import { useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { getSessionId, sendChat } from "../api";
+import { AssistantTurn } from "../components/AssistantTurn";
+import { CitationPanel } from "../components/CitationPanel";
 import { useT } from "../i18n";
+import type { ChatTurn, Citation, HealthInfo, Jurisdiction, Language } from "../types";
 
-/** Chat screen. Phase 1: empty state with starter prompts; sending is enabled in Phase 2. */
-export function ChatPage() {
+let turnCounter = 0;
+const nextId = () => `turn-${++turnCounter}`;
+
+export function ChatPage({
+  jurisdiction,
+  language,
+  health,
+}: {
+  jurisdiction: Jurisdiction;
+  language: Language;
+  health: HealthInfo | null | undefined;
+}) {
   const t = useT();
+  const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [draft, setDraft] = useState("");
+  const [pending, setPending] = useState(false);
+  const [citation, setCitation] = useState<Citation | null>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const sessionId = useRef(getSessionId());
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView?.({ behavior: "smooth", block: "end" });
+  }, [turns, pending]);
+
+  async function ask(message: string) {
+    const text = message.trim();
+    if (!text || pending) return;
+    setDraft("");
+    setTurns((previous) => [...previous, { id: nextId(), role: "user", text }]);
+    setPending(true);
+    try {
+      const response = await sendChat({ session_id: sessionId.current, message: text, language, jurisdiction });
+      setTurns((previous) => [...previous, { id: nextId(), role: "assistant", response }]);
+    } catch {
+      setTurns((previous) => [...previous, { id: nextId(), role: "error", text: t("errorGeneric") }]);
+    } finally {
+      setPending(false);
+    }
+  }
+
+  function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    void ask(draft);
+  }
+
+  const noCorpus = health && health.corpus.chunks === 0;
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-3xl flex-col px-4">
-      <section className="flex flex-1 flex-col items-center justify-center py-10 text-center">
-        <h2 className="text-2xl font-semibold text-leaf-800">{t("emptyTitle")}</h2>
-        <p className="mt-3 max-w-xl text-stone-600">{t("emptyBody")}</p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          {(["starter1", "starter2"] as const).map((key) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setDraft(t(key))}
-              className="rounded-full border border-leaf-100 bg-white px-4 py-2 text-sm text-leaf-700 shadow-sm hover:bg-leaf-50"
-            >
-              {t(key)}
-            </button>
-          ))}
-        </div>
-      </section>
+    <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-4">
+      {turns.length === 0 ? (
+        <section className="flex flex-1 flex-col items-center justify-center py-10 text-center">
+          <h2 className="text-2xl font-semibold text-leaf-800">{t("emptyTitle")}</h2>
+          <p className="mt-3 max-w-xl text-stone-600">{t("emptyBody")}</p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
+            {(["starter1", "starter2"] as const).map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => void ask(t(key))}
+                className="rounded-full border border-leaf-100 bg-white px-4 py-2 text-sm text-leaf-700 shadow-sm hover:bg-leaf-50"
+              >
+                {t(key)}
+              </button>
+            ))}
+          </div>
+          {noCorpus && <p className="mt-6 text-sm text-turmeric-600">{t("noCorpusHint")}</p>}
+        </section>
+      ) : (
+        <section className="flex-1 space-y-4 py-6" aria-live="polite">
+          {turns.map((turn) =>
+            turn.role === "user" ? (
+              <div key={turn.id} className="flex justify-end">
+                <p className="max-w-[85%] rounded-2xl rounded-br-sm bg-leaf-700 px-4 py-2 text-white">{turn.text}</p>
+              </div>
+            ) : turn.role === "assistant" ? (
+              <AssistantTurn key={turn.id} response={turn.response} onCite={setCitation} />
+            ) : (
+              <p key={turn.id} role="alert" className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">
+                {turn.text}
+              </p>
+            ),
+          )}
+          {pending && (
+            <p className="flex items-center gap-2 text-sm text-stone-500">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-leaf-600" />
+              {t("thinking")}
+            </p>
+          )}
+          <div ref={bottomRef} />
+        </section>
+      )}
 
-      <form className="sticky bottom-0 bg-stone-50 pb-4" onSubmit={(event) => event.preventDefault()}>
-        <div className="flex gap-2 rounded-xl border border-stone-200 bg-white p-2 shadow-sm">
+      <form className="sticky bottom-0 bg-stone-50 pb-4 pt-2" onSubmit={onSubmit}>
+        <div className="flex gap-2 rounded-xl border border-stone-200 bg-white p-2 shadow-sm focus-within:border-leaf-600">
           <input
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             placeholder={t("inputPlaceholder")}
             aria-label={t("inputPlaceholder")}
+            maxLength={2000}
             className="min-w-0 flex-1 bg-transparent px-2 outline-none"
           />
-          <button type="submit" disabled className="rounded-lg bg-leaf-700 px-4 py-2 text-white disabled:opacity-50">
+          <button
+            type="submit"
+            disabled={pending || !draft.trim()}
+            className="rounded-lg bg-leaf-700 px-4 py-2 font-medium text-white hover:bg-leaf-800 disabled:opacity-50"
+          >
             {t("send")}
           </button>
         </div>
-        <p className="mt-2 text-center text-xs text-stone-500">{t("chatComingSoon")}</p>
       </form>
+
+      <CitationPanel citation={citation} onClose={() => setCitation(null)} />
     </div>
   );
 }

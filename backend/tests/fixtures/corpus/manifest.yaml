@@ -1,0 +1,35 @@
+# FICTIONAL test corpus — these are not real laws.
+- id: widgets_act
+  title: "The Sample Widgets Act, 2099 (fictional)"
+  jurisdiction: india
+  domain: ip
+  doc_type: statute
+  version_date: "2099-01-01"
+  source_url: "https://example.test/widgets"
+  file: india/widgets_act.txt
+
+- id: starlight_rules
+  title: "Sample Starlight Harvest Rules, 2099 (fictional)"
+  jurisdiction: india
+  domain: abs
+  doc_type: rules
+  version_date: "2099-02-01"
+  source_url: "https://example.test/starlight"
+  file: india/starlight_rules.txt
+
+- id: cloud_treaty
+  title: "Sample Treaty on Cloud Gardens (fictional)"
+  jurisdiction: international
+  domain: ip
+  doc_type: treaty
+  version_date: "2099-03-01"
+  source_url: "https://example.test/cloud"
+  file: international/cloud_treaty.txt
+
+- id: missing_doc
+  title: "A document whose file has not been downloaded"
+  jurisdiction: india
+  domain: tk
+  doc_type: registry_note
+  version_date: "2099-04-01"
+  file: india/not_downloaded.pdf

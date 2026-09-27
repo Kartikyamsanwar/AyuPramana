@@ -30,7 +30,7 @@ export default function App() {
           health={health}
         />
         <main className="flex-1 overflow-y-auto">
-          <ChatPage />
+          <ChatPage jurisdiction={jurisdiction} language={language} health={health} />
         </main>
       </div>
     </I18nProvider>

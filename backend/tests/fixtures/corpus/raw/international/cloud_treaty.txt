@@ -1,0 +1,12 @@
+FICTIONAL TEST DOCUMENT — NOT LAW. Used only by automated tests.
+SAMPLE TREATY ON CLOUD GARDENS
+Article 1
+Definitions
+For the purposes of this Treaty, "cloud garden" means a fictional garden floating above the sea of glass.
+Article 2
+Registration of widgets in cloud gardens
+Contracting Parties shall keep a register of widgets crafted in cloud gardens, as provided in
+Article 1 of this Treaty.
+Article 3
+Sharing of rainbow seeds
+Contracting Parties shall share rainbow seeds collected from cloud gardens fairly among gardeners.

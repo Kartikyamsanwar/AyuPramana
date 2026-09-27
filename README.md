@@ -35,6 +35,21 @@ uvicorn app.main:app --reload --port 8000
 
 Check it: http://localhost:8000/api/health
 
+### Add documents and ingest
+
+1. Download the official documents listed in [docs/CORPUS_SOURCES.md](docs/CORPUS_SOURCES.md) into
+   `data/raw/india/` or `data/raw/international/`.
+2. Add one entry per document to [data/manifest.yaml](data/manifest.yaml). Copy the title, version date and
+   source URL from the document itself.
+3. Ingest (from `backend/`, with the venv active):
+
+```bash
+python scripts/ingest.py --all          # or: --doc patents_act_1970
+```
+
+The first run downloads the embedding model. Re-running is cheap: unchanged files are skipped, and a changed
+file becomes a new version (old chunks are retired, not deleted).
+
 ### Frontend
 
 ```bash
