@@ -37,6 +37,47 @@ MESSAGES: dict[str, dict[str, str]] = {
         "en": "Your request for an IP facilitator has been recorded (reference {reference}). Quote this reference "
         "when you contact the IP facilitation desk. Please don't share personal details in this chat.",
     },
+    "out_of_scope_medical": {
+        "en": "I can't help with medical, dosage or treatment questions — please consult a qualified Ayurveda "
+        "practitioner. I can answer questions about intellectual property and regulatory rules for Ayurvedic products.",
+    },
+    "off_topic": {
+        "en": "That's outside what I can help with. I answer questions about intellectual property (patents, trade "
+        "marks, GI, designs, copyright, plant varieties), access and benefit sharing, traditional knowledge, and "
+        "regulatory approvals for Ayurvedic products.",
+    },
+    "greeting": {
+        "en": "Namaste! I explain intellectual-property and regulatory rules for Ayurvedic products, citing the exact "
+        "provision each answer comes from. Try one of these, or ask your own question:",
+    },
+    "legal_advice_notice": {
+        "en": "I can't advise on your specific situation or dispute. Below is general information from the sources; "
+        "for your case, please talk to an IP facilitator.",
+    },
+    "flow_intro": {
+        "en": "Let's work out your product's regulatory category. I'll ask a few quick questions.",
+    },
+    "flow_cancelled": {
+        "en": "Okay, I've stopped the product classification. Ask me anything else.",
+    },
+    "partial_answer": {
+        "en": "I couldn't answer the part about {topics} from the loaded sources.",
+    },
+    "links_heading": {
+        "en": "Official portals (team-verified list):",
+    },
+    "links_not_verified": {
+        "en": "_Official portal links for this topic haven't been verified by the team yet._",
+    },
+    "agent_formulation_classification": {"en": "Product category"},
+    "agent_ip_protection": {"en": "Intellectual property"},
+    "agent_abs_compliance": {"en": "Access & benefit sharing"},
+    "agent_prior_art_tk": {"en": "Traditional knowledge & prior art"},
+    "agent_registry_navigation": {"en": "Where to apply"},
+    "agent_general_regulatory": {"en": "Regulatory information"},
+    "starter_patent": {"en": "Can I patent a classical Ayurvedic formulation?"},
+    "starter_plant": {"en": "What approvals do I need to use a medicinal plant commercially?"},
+    "starter_classify": {"en": "Which regulatory category does my herbal product fall into?"},
     "extractive_intro": {
         "en": "The AI writer is unavailable right now, so here are the most relevant provisions, quoted from the "
         "sources:",

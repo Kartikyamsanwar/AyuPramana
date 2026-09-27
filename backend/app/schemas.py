@@ -40,6 +40,12 @@ class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=2000)
     language: LanguageCode = "en"
     jurisdiction: JurisdictionChoice = "india"
+    quick_reply_id: str | None = Field(default=None, max_length=100, description="Id of a clicked quick-reply button")
+
+
+class QuickReply(BaseModel):
+    id: str
+    label: str
 
 
 class Citation(BaseModel):
@@ -73,6 +79,10 @@ class AnswerBlock(BaseModel):
 class ChatResponse(BaseModel):
     query_id: int | None
     answers: dict[str, AnswerBlock]
+    follow_up_question: str | None = None
+    quick_replies: list[QuickReply] = Field(default_factory=list)
+    notice: str | None = Field(default=None, description="A note shown above the answers (e.g. scope limits)")
+    intents: list[str] = Field(default_factory=list)
     disclaimer: str
     language: LanguageCode
 

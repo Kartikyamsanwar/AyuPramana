@@ -23,6 +23,7 @@ from app.main import create_app
 from app.services import Services, build_services
 
 FIXTURE_CORPUS = Path(__file__).parent / "fixtures" / "corpus"
+REPO_DATA = Path(__file__).resolve().parents[2] / "data"
 
 
 class FakeEmbedder:
@@ -61,6 +62,17 @@ def verification_json(user_prompt: str, unsupported: set[int] = frozenset()) -> 
     return json.dumps({"results": [{"id": i, "supported": i not in unsupported} for i in statement_ids(user_prompt)]})
 
 
+def routing_responder(scope: str = "in_scope", intents: list[str] | None = None, unsupported: set[int] = frozenset()):
+    """JSON responder answering router calls with a fixed route and fact-checks with `unsupported`."""
+
+    def respond(system: str, user: str, kwargs: dict) -> str:
+        if "route user messages" in system:
+            return json.dumps({"scope": scope, "intents": intents or [], "search_query": user.split(":", 1)[-1]})
+        return verification_json(user, unsupported)
+
+    return respond
+
+
 class FakeLLM:
     """Scripted LLM. `answer` is returned for drafting calls; JSON-mode calls get `json_responder`
     (default: the fact-check marks every statement supported)."""
@@ -96,6 +108,9 @@ class FakeReranker:
 def data_dir(tmp_path: Path) -> Path:
     target = tmp_path / "data"
     shutil.copytree(FIXTURE_CORPUS, target)
+    # The real (non-legal) configuration files: classifier questions and the curated links list
+    for name in ("formulation_flow.yaml", "registry_links.yaml"):
+        shutil.copy(REPO_DATA / name, target / name)
     return target
 
 

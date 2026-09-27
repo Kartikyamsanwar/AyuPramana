@@ -1,0 +1,102 @@
+# Formulation classifier — the short question flow shown as quick-reply buttons.
+#
+# IMPORTANT: the questions only collect FACTS about the product. They contain no legal claims.
+# The category is decided by the LLM from the legal definitions RETRIEVED from the corpus, with
+# citations. If the corpus lacks those definitions, the assistant says it cannot determine the category.
+#
+# `search` lines are only retrieval queries (used to find the definitions in the corpus); they are
+# never shown to users. `domains` narrows the search to manifest documents with those domains.
+#
+# TEAM: review the wording with a regulatory expert, add Hindi/Marathi labels, then set verified: true.
+verified: false
+max_questions: 4
+
+questions:
+  - id: origin
+    text:
+      en: "Where does your product's formulation come from?"
+    options:
+      - id: classical_text
+        label: { en: "Exactly as described in a classical Ayurvedic text" }
+      - id: classical_modified
+        label: { en: "Classical ingredients, but a new combination or dosage form" }
+      - id: new_formulation
+        label: { en: "A new formulation, not based on classical texts" }
+      - id: extract
+        label: { en: "A purified or standardised plant extract or fraction" }
+      - id: not_sure
+        label: { en: "Not sure" }
+
+  - id: use
+    text:
+      en: "How is the product meant to be used?"
+    options:
+      - id: treat_prevent
+        label: { en: "Taken to treat or prevent a disease or disorder" }
+      - id: food
+        label: { en: "Eaten as food, a health drink or a dietary supplement" }
+      - id: external_beauty
+        label: { en: "Applied to skin or hair to cleanse or beautify" }
+      - id: not_sure
+        label: { en: "Not sure" }
+
+  - id: ingredients
+    text:
+      en: "What does it contain?"
+    options:
+      - id: plant_only
+        label: { en: "Only plant-based ingredients" }
+      - id: mineral_animal
+        label: { en: "Includes minerals, metals or animal-derived ingredients" }
+      - id: synthetic
+        label: { en: "Includes synthetic or modern-medicine ingredients" }
+      - id: not_sure
+        label: { en: "Not sure" }
+
+  - id: claims
+    text:
+      en: "What will your label or advertising say about health?"
+    options:
+      - id: disease_claims
+        label: { en: "That it cures, treats or prevents specific diseases" }
+      - id: wellness_claims
+        label: { en: "Only general wellness or nutrition claims" }
+      - id: no_claims
+        label: { en: "No health claims" }
+      - id: not_sure
+        label: { en: "Not sure" }
+
+categories:
+  - id: classical
+    label: { en: "Classical (generic) Ayurvedic medicine" }
+    search: "Ayurvedic drug definition classical formulation"
+    domains: [drug_regulation]
+  - id: proprietary
+    label: { en: "Patent or proprietary Ayurvedic medicine" }
+    search: "patent or proprietary Ayurvedic medicine definition"
+    domains: [drug_regulation]
+  - id: new_drug
+    label: { en: "New drug" }
+    search: "new drug definition approval"
+    domains: [drug_regulation]
+  - id: phytopharmaceutical
+    label: { en: "Phytopharmaceutical drug" }
+    search: "phytopharmaceutical drug definition"
+    domains: [drug_regulation]
+  - id: aahar
+    label: { en: "Ayurveda Aahar / nutraceutical food" }
+    search: "Ayurveda Aahar definition food"
+    domains: [food]
+  - id: cosmetic
+    label: { en: "Cosmetic" }
+    search: "cosmetic definition"
+    domains: [cosmetics, drug_regulation]
+
+# Extra searches for the product's IP and access-and-benefit-sharing position
+posture_searches:
+  - search: "patent protection for formulation based on traditional knowledge"
+    domains: [ip, tk]
+  - search: "access to biological resources approval benefit sharing"
+    domains: [abs]
+  - search: "advertisement claims for Ayurvedic medicines"
+    domains: [advertising]

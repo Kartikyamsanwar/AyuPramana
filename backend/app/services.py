@@ -5,8 +5,16 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
+from app.agents.abs_helper import ABSComplianceAgent
+from app.agents.formulation import FormulationClassifierAgent
+from app.agents.general import GeneralAgent
 from app.agents.grounded import GroundedAnswerer
+from app.agents.ip_routing import IPRoutingAgent
 from app.agents.orchestrator import ChatService
+from app.agents.registry import RegistryNavigatorAgent
+from app.agents.router import Router
+from app.agents.session_state import SessionStore
+from app.agents.tkdl_pointer import TKDLPointerAgent
 from app.config import Settings
 from app.db.audit import AuditLog
 from app.db.repository import CorpusRepository
@@ -79,7 +87,17 @@ def build_services(
     answerer = GroundedAnswerer(
         retriever, llm_client, threshold=settings.confidence_threshold, verify=settings.citation_verification
     )
-    chat = ChatService(settings, answerer, audit)
+    registry_path = settings.data_dir / "registry_links.yaml"
+    specialists = {
+        "ip_protection": IPRoutingAgent(answerer),
+        "abs_compliance": ABSComplianceAgent(answerer),
+        "prior_art_tk": TKDLPointerAgent(answerer, registry_path),
+        "registry_navigation": RegistryNavigatorAgent(answerer, registry_path),
+        "general_regulatory": GeneralAgent(answerer),
+    }
+    sessions = SessionStore()
+    formulation = FormulationClassifierAgent(answerer, settings.data_dir / "formulation_flow.yaml", sessions)
+    chat = ChatService(settings, answerer, audit, Router(llm_client), specialists, formulation, sessions)
     return Services(
         settings=settings,
         session_factory=session_factory,

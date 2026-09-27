@@ -1,0 +1,116 @@
+# Curated official portals used by the Registry navigator and the TKDL / prior-art pointer.
+#
+# The assistant NEVER invents links. It shows an entry to users only when `verified: true`.
+# To verify an entry: open the official site, find the exact page (filing, search or form page),
+# paste that URL into `url`, add what users will find there to `note`, then set `verified: true`.
+#
+# Fields
+#   id            unique snake_case id
+#   name          what users see
+#   jurisdiction  india | international
+#   topics        which goals this link serves (see vocabulary below)
+#   url           exact official URL (leave "" until checked)
+#   note          optional one-line description (e.g. which form or search)
+#   verified      true only after a team member has checked the link
+#
+# Topic vocabulary: patent, trademark, design, gi, copyright, plant_variety, abs, tk,
+#                   prior_art_search, drug_licence, food, cosmetics, statutes
+#
+# The three root domains below are listed in the SIH26045 problem statement's dataset section.
+# They still need a team member to confirm the exact page before setting verified: true.
+
+- id: ip_india
+  name: "IP India (Office of the Controller General of Patents, Designs & Trade Marks)"
+  jurisdiction: india
+  topics: [patent, trademark, design, gi, prior_art_search]
+  url: "https://ipindia.gov.in"
+  note: ""
+  verified: false
+
+- id: tkdl
+  name: "Traditional Knowledge Digital Library (TKDL)"
+  jurisdiction: india
+  topics: [tk, prior_art_search]
+  url: "https://tkdl.res.in"
+  note: ""
+  verified: false
+
+- id: india_code
+  name: "India Code — official texts of Acts and rules"
+  jurisdiction: india
+  topics: [statutes]
+  url: "https://indiacode.nic.in"
+  note: ""
+  verified: false
+
+- id: nba_abs
+  name: "National Biodiversity Authority — access and benefit sharing applications"
+  jurisdiction: india
+  topics: [abs, tk]
+  url: ""
+  note: ""
+  verified: false
+
+- id: copyright_office
+  name: "Copyright Office, India — registration"
+  jurisdiction: india
+  topics: [copyright]
+  url: ""
+  note: ""
+  verified: false
+
+- id: ppvfr_authority
+  name: "Protection of Plant Varieties and Farmers' Rights Authority"
+  jurisdiction: india
+  topics: [plant_variety]
+  url: ""
+  note: ""
+  verified: false
+
+- id: ayush_drug_licensing
+  name: "Licensing of Ayurvedic drugs (State Licensing Authority / Ministry of Ayush guidance)"
+  jurisdiction: india
+  topics: [drug_licence, cosmetics]
+  url: ""
+  note: ""
+  verified: false
+
+- id: fssai
+  name: "FSSAI — food business licensing and product approval"
+  jurisdiction: india
+  topics: [food]
+  url: ""
+  note: ""
+  verified: false
+
+- id: wipo_pct
+  name: "WIPO — international patent applications (PCT)"
+  jurisdiction: international
+  topics: [patent, prior_art_search]
+  url: ""
+  note: ""
+  verified: false
+
+- id: wipo_madrid
+  name: "WIPO — international trademark registration (Madrid System)"
+  jurisdiction: international
+  topics: [trademark]
+  url: ""
+  note: ""
+  verified: false
+
+- id: wipo_hague
+  name: "WIPO — international design registration (Hague System)"
+  jurisdiction: international
+  topics: [design]
+  url: ""
+  note: ""
+  verified: false
+
+- id: abs_clearing_house
+  name: "Access and Benefit-sharing Clearing-House (CBD)"
+  jurisdiction: international
+  topics: [abs, tk]
+  url: ""
+  note: ""
+  verified: false

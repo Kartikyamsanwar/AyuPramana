@@ -13,7 +13,7 @@ If the LLM is unavailable, it falls back to quoting the retrieved provisions ver
 from __future__ import annotations
 
 import logging
-from typing import Sequence
+from typing import Callable, Sequence
 
 from app.agents.citations import renumber_citations
 from app.agents.prompts import GROUNDED_SYSTEM, grounded_user_prompt
@@ -29,6 +29,13 @@ log = logging.getLogger(__name__)
 INSUFFICIENT = "INSUFFICIENT_EVIDENCE"
 MIN_SUPPORTED_FRACTION = 0.5
 RELATED_LIMIT = 3
+
+
+EventSink = Callable[[str, dict], None]
+
+
+def _no_events(event: str, data: dict) -> None:
+    return None
 
 
 def _snippet(text: str, limit: int = 220) -> str:
@@ -58,25 +65,44 @@ class GroundedAnswerer:
         task: str = "",
         agent: str = "general",
         retrieval_query: str | None = None,
+        emit: EventSink | None = None,
     ) -> SpecialistResult:
+        emit = emit or _no_events
+        emit("status", {"stage": "retrieving", "jurisdiction": jurisdiction})
         retrieved = self.retriever.search(retrieval_query or question, jurisdiction, domains)
+        return self.answer_from(retrieved, question, jurisdiction, task=task, agent=agent, emit=emit)
+
+    def answer_from(
+        self,
+        retrieved: list[RetrievedChunk],
+        question: str,
+        jurisdiction: str,
+        *,
+        task: str = "",
+        agent: str = "general",
+        emit: EventSink | None = None,
+    ) -> SpecialistResult:
+        """Write and check an answer from already-retrieved chunks."""
+        emit = emit or _no_events
         if not retrieved:
             reason = "no_corpus" if self.retriever.repository.active_chunk_count(jurisdiction) == 0 else "no_sources"
             return self.abstain(jurisdiction, reason, agent, retrieved)
 
         if self.llm is None:
             return self.extractive(jurisdiction, retrieved, agent)
+        emit("status", {"stage": "writing", "jurisdiction": jurisdiction})
         try:
             draft = self.llm.complete(GROUNDED_SYSTEM, grounded_user_prompt(question, jurisdiction, retrieved, task))
         except LLMError as exc:
             log.warning("LLM unavailable, using extractive answer: %s", exc)
             return self.extractive(jurisdiction, retrieved, agent)
+        emit("status", {"stage": "verifying", "jurisdiction": jurisdiction})
         return self.finalize(draft, jurisdiction, retrieved, agent)
 
     def finalize(
         self, draft: str, jurisdiction: str, retrieved: list[RetrievedChunk], agent: str
     ) -> SpecialistResult:
-        """Citation check → verification → confidence → answer or abstention. Reused by specialists."""
+        """Citation check → verification → confidence → answer or abstention."""
         if INSUFFICIENT in draft:
             return self.abstain(jurisdiction, "insufficient_evidence", agent, retrieved, related=True)
         markdown, cited = renumber_citations(draft, retrieved)
@@ -141,7 +167,9 @@ class GroundedAnswerer:
 
     def extractive(self, jurisdiction: str, retrieved: list[RetrievedChunk], agent: str, limit: int = 3) -> SpecialistResult:
         """No LLM: quote the top provisions verbatim, still gated by retrieval confidence."""
-        top = retrieved[:limit]
+        # Quote only clearly relevant provisions (always at least the best one)
+        cutoff = max(0.25, retrieved[0].relevance * 0.5)
+        top = [retrieved[0]] + [r for r in retrieved[1:limit] if r.relevance >= cutoff]
         confidence, signals = conf.score(top[:1], retrieved, None)
         if confidence < self.threshold:
             return self.abstain(

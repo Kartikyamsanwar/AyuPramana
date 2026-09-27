@@ -49,6 +49,11 @@ const en = {
   sendRequest: "Send request",
   cancel: "Cancel",
   requestFailed: "Couldn't record the request. Please try again.",
+  stage_routing: "Understanding your question…",
+  stage_retrieving: "Searching the law library…",
+  stage_writing: "Writing a cited answer…",
+  stage_verifying: "Checking every citation…",
+  stage_translating: "Translating…",
 };
 
 export type StringKey = keyof typeof en;

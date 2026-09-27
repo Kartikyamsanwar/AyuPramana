@@ -21,3 +21,4 @@ class SpecialistResult:
     agent: str = "general"
     retrieved: list[RetrievedChunk] = field(default_factory=list)  # everything retrieved (for eval/debug)
     signals: dict[str, float] = field(default_factory=dict)  # confidence components, for audit
+    appendix: str = ""  # curated, non-legal extras shown after the answer (e.g. verified portal links)

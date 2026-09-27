@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { getSessionId, sendChat } from "../api";
+import { getSessionId, sendChat, streamChat } from "../api";
 import { AssistantTurn } from "../components/AssistantTurn";
 import { CitationPanel } from "../components/CitationPanel";
-import { useT } from "../i18n";
-import type { ChatTurn, Citation, HealthInfo, Jurisdiction, Language } from "../types";
+import { useT, type StringKey } from "../i18n";
+import type { ChatRequest, ChatTurn, Citation, HealthInfo, Jurisdiction, Language, QuickReply } from "../types";
 
 let turnCounter = 0;
 const nextId = () => `turn-${++turnCounter}`;
@@ -21,6 +21,7 @@ export function ChatPage({
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState(false);
+  const [stage, setStage] = useState<string>("routing");
   const [citation, setCitation] = useState<Citation | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const sessionId = useRef(getSessionId());
@@ -29,14 +30,22 @@ export function ChatPage({
     bottomRef.current?.scrollIntoView?.({ behavior: "smooth", block: "end" });
   }, [turns, pending]);
 
-  async function ask(message: string) {
+  async function ask(message: string, quickReplyId?: string) {
     const text = message.trim();
     if (!text || pending) return;
     setDraft("");
     setTurns((previous) => [...previous, { id: nextId(), role: "user", text }]);
     setPending(true);
+    setStage("routing");
+    const request: ChatRequest = { session_id: sessionId.current, message: text, language, jurisdiction };
+    if (quickReplyId && !quickReplyId.startsWith("starter:")) request.quick_reply_id = quickReplyId;
     try {
-      const response = await sendChat({ session_id: sessionId.current, message: text, language, jurisdiction });
+      let response;
+      try {
+        response = await streamChat(request, setStage);
+      } catch {
+        response = await sendChat(request); // streaming unavailable (e.g. a proxy buffers it)
+      }
       setTurns((previous) => [...previous, { id: nextId(), role: "assistant", response }]);
     } catch {
       setTurns((previous) => [...previous, { id: nextId(), role: "error", text: t("errorGeneric") }]);
@@ -51,6 +60,7 @@ export function ChatPage({
   }
 
   const noCorpus = health && health.corpus.chunks === 0;
+  const lastAssistantId = [...turns].reverse().find((turn) => turn.role === "assistant")?.id;
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-4">
@@ -80,7 +90,13 @@ export function ChatPage({
                 <p className="max-w-[85%] rounded-2xl rounded-br-sm bg-leaf-700 px-4 py-2 text-white">{turn.text}</p>
               </div>
             ) : turn.role === "assistant" ? (
-              <AssistantTurn key={turn.id} response={turn.response} onCite={setCitation} />
+              <AssistantTurn
+                key={turn.id}
+                response={turn.response}
+                onCite={setCitation}
+                onQuickReply={(reply: QuickReply) => void ask(reply.label, reply.id)}
+                active={!pending && turn.id === lastAssistantId}
+              />
             ) : (
               <p key={turn.id} role="alert" className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">
                 {turn.text}
@@ -90,7 +106,7 @@ export function ChatPage({
           {pending && (
             <p className="flex items-center gap-2 text-sm text-stone-500">
               <span className="h-2 w-2 animate-pulse rounded-full bg-leaf-600" />
-              {t("thinking")}
+              {t(`stage_${stage}` as StringKey) ?? t("thinking")}
             </p>
           )}
           <div ref={bottomRef} />

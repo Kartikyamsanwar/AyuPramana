@@ -41,9 +41,18 @@ export interface AnswerBlock {
   signals: Record<string, number>;
 }
 
+export interface QuickReply {
+  id: string;
+  label: string;
+}
+
 export interface ChatResponse {
   query_id: number | null;
   answers: Partial<Record<SingleJurisdiction, AnswerBlock>>;
+  follow_up_question?: string | null;
+  quick_replies?: QuickReply[];
+  notice?: string | null;
+  intents?: string[];
   disclaimer: string;
   language: Language;
 }
@@ -53,7 +62,10 @@ export interface ChatRequest {
   message: string;
   language: Language;
   jurisdiction: Jurisdiction;
+  quick_reply_id?: string;
 }
+
+export type ProgressStage = "routing" | "retrieving" | "writing" | "verifying" | "translating";
 
 export type ChatTurn =
   | { id: string; role: "user"; text: string }

@@ -90,12 +90,41 @@ describe("App shell", () => {
     const request = JSON.parse(String(fetchMock.mock.calls.find((c) => String(c[0]).includes("/api/chat"))?.[1]?.body));
     expect(request.jurisdiction).toBe("both");
 
-    await userEvent.click(within(india).getByText(/Section 3 ·/));
+    await userEvent.click(within(india).getByRole("button", { name: /Section 3 ·/ }));
     const panel = screen.getByRole("dialog");
     expect(within(panel).getByText(/Any person crafting a widget/)).toBeInTheDocument();
     expect(within(panel).getByRole("link", { name: /Open official source/ })).toHaveAttribute(
       "href",
       "https://example.test/widgets",
     );
+  });
+});
+
+describe("Formulation classifier quick replies", () => {
+  it("renders the follow-up question as buttons and sends the chosen reply id", async () => {
+    const followUp: ChatResponse = {
+      query_id: 2,
+      answers: {},
+      follow_up_question: "(1/4) Where does your product's formulation come from?",
+      quick_replies: [
+        { id: "origin:classical_text", label: "Exactly as described in a classical Ayurvedic text" },
+        { id: "flow:cancel", label: "Cancel" },
+      ],
+      disclaimer: "This is information, not legal advice.",
+      language: "en",
+    };
+    const fetchMock = mockApi(followUp);
+    render(<App />);
+    await userEvent.type(screen.getByRole("textbox"), "Which category is my product?");
+    await userEvent.click(screen.getByRole("button", { name: "Send" }));
+    await userEvent.click(await screen.findByRole("button", { name: /classical Ayurvedic text/ }));
+
+    const bodies = fetchMock.mock.calls
+      .filter((c) => String(c[0]) === "/api/chat")
+      .map((c) => JSON.parse(String(c[1]?.body)));
+    expect(bodies.at(-1)).toMatchObject({
+      message: "Exactly as described in a classical Ayurvedic text",
+      quick_reply_id: "origin:classical_text",
+    });
   });
 });
