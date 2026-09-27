@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { getSessionId, sendChat, streamChat } from "../api";
 import { AssistantTurn } from "../components/AssistantTurn";
 import { CitationPanel } from "../components/CitationPanel";
+import { VoiceButton } from "../components/VoiceButton";
 import { useT, type StringKey } from "../i18n";
 import type { ChatRequest, ChatTurn, Citation, HealthInfo, Jurisdiction, Language, QuickReply } from "../types";
 
@@ -48,7 +49,10 @@ export function ChatPage({
       }
       setTurns((previous) => [...previous, { id: nextId(), role: "assistant", response }]);
     } catch {
-      setTurns((previous) => [...previous, { id: nextId(), role: "error", text: t("errorGeneric") }]);
+      setTurns((previous) => [
+        ...previous,
+        { id: nextId(), role: "error", text: t("errorGeneric"), retry: { message: text, quickReplyId } },
+      ]);
     } finally {
       setPending(false);
     }
@@ -81,6 +85,7 @@ export function ChatPage({
             ))}
           </div>
           {noCorpus && <p className="mt-6 text-sm text-turmeric-600">{t("noCorpusHint")}</p>}
+          {health === null && <p className="mt-6 text-sm text-red-700">{t("backendOfflineHint")}</p>}
         </section>
       ) : (
         <section className="flex-1 space-y-4 py-6" aria-live="polite">
@@ -98,9 +103,19 @@ export function ChatPage({
                 active={!pending && turn.id === lastAssistantId}
               />
             ) : (
-              <p key={turn.id} role="alert" className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">
-                {turn.text}
-              </p>
+              <div key={turn.id} role="alert" className="flex items-center gap-3 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">
+                <span className="flex-1">{turn.text}</span>
+                {turn.retry && (
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => void ask(turn.retry!.message, turn.retry!.quickReplyId)}
+                    className="rounded-md border border-red-300 px-2 py-1 text-xs font-medium hover:bg-red-100"
+                  >
+                    {t("retry")}
+                  </button>
+                )}
+              </div>
             ),
           )}
           {pending && (
@@ -123,6 +138,7 @@ export function ChatPage({
             maxLength={2000}
             className="min-w-0 flex-1 bg-transparent px-2 outline-none"
           />
+          <VoiceButton language={language} onText={(text) => setDraft(text)} />
           <button
             type="submit"
             disabled={pending || !draft.trim()}

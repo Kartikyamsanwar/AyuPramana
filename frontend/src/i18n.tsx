@@ -105,6 +105,8 @@ const en = {
   loading: "Loading…",
   loadFailed: "Couldn't load this page.",
   answered: "Answered",
+  retry: "Try again",
+  backendOfflineHint: "The assistant's server isn't reachable. Start the backend (see README) and reload this page.",
 };
 
 export type StringKey = keyof typeof en;
@@ -209,6 +211,8 @@ const hi: Strings = {
   loading: "लोड हो रहा है…",
   loadFailed: "यह पृष्ठ लोड नहीं हो सका।",
   answered: "उत्तर दिया",
+  retry: "फिर से प्रयास करें",
+  backendOfflineHint: "सहायक का सर्वर उपलब्ध नहीं है। बैकएंड चालू करें (README देखें) और यह पृष्ठ फिर से लोड करें।",
 };
 
 const mr: Strings = {
@@ -310,6 +314,8 @@ const mr: Strings = {
   loading: "लोड होत आहे…",
   loadFailed: "हे पान लोड होऊ शकले नाही.",
   answered: "उत्तर दिले",
+  retry: "पुन्हा प्रयत्न करा",
+  backendOfflineHint: "सहायकाचा सर्व्हर उपलब्ध नाही. बॅकएंड सुरू करा (README पाहा) आणि हे पान पुन्हा लोड करा.",
 };
 
 const dictionaries: Record<Language, Strings> = { en, hi, mr };

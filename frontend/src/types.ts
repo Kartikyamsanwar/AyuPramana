@@ -71,7 +71,7 @@ export type ProgressStage = "routing" | "retrieving" | "writing" | "verifying" |
 export type ChatTurn =
   | { id: string; role: "user"; text: string }
   | { id: string; role: "assistant"; response: ChatResponse }
-  | { id: string; role: "error"; text: string };
+  | { id: string; role: "error"; text: string; retry?: { message: string; quickReplyId?: string } };
 
 export interface SourceVersion {
   version: string;

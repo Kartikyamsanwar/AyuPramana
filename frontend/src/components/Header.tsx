@@ -22,7 +22,7 @@ export function Header({ jurisdiction, onJurisdictionChange, language, onLanguag
     { page: "chat", href: "#/", label: t("navChat") },
     { page: "sources", href: "#/sources", label: t("navSources") },
   ];
-  if (health?.features.admin_mode) tabs.push({ page: "admin", href: "#/admin", label: t("navAdmin") });
+  if (health?.features?.admin_mode) tabs.push({ page: "admin", href: "#/admin", label: t("navAdmin") });
   return (
     <header className="bg-leaf-800 text-white shadow">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
