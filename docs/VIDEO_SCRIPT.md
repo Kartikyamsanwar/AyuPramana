@@ -1,8 +1,8 @@
 # AyuPramana — demo video voiceover (1 min 54 s)
 
-Video: `Videos\AyuPramana_demo_trimmed.mp4` (waiting time removed; the original audio was dropped so the voiceover
-goes on a clean track). Read at a calm, confident pace, about 140 words per minute. Each block starts at the time
-shown. If a line runs long, drop the words in *[brackets]*.
+Video: `OneDrive\Videos\AyuPramana_demo_trimmed.mp4`. Waiting time is removed, and the original audio was dropped
+so the voiceover goes on a clean track. Read at a calm, confident pace (every block is written for 120–160 words per
+minute). Each block starts at the time shown.
 
 ---
 
@@ -10,8 +10,7 @@ shown. If a line runs long, drop the words in *[brackets]*.
 > Patents, biodiversity approvals, drug and advertising rules — Ayurveda innovators face a legal maze. Meet AyuPramana.
 
 **0:06 – 0:14 · Typing the first question**
-> A user asks, in plain language: what approvals do I need to use a medicinal plant commercially? Our agentic router
-> sends it to the right specialist.
+> A user asks: what approvals do I need to use a medicinal plant commercially? The router picks the right specialist.
 
 **0:14 – 0:28 · ABS checklist appears; switch to "Both"**
 > The benefit-sharing specialist returns a compliance checklist, and every line cites the exact section of the
@@ -31,8 +30,8 @@ shown. If a line runs long, drop the words in *[brackets]*.
 > hard-coded.
 
 **1:06 – 1:17 · Feedback and "Talk to an IP facilitator"**
-> Users rate every answer, and when a case needs a human, one click raises a request to an IP facilitator, with a
-> reference number *[— and no personal data stored]*.
+> Users rate every answer — and when a case needs a human, one click requests an IP facilitator, with a reference
+> number.
 
 **1:17 – 1:30 · Audit dashboard**
 > Behind every answer: hybrid search, a second AI pass that fact-checks each sentence against its source, and safe
