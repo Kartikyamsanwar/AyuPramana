@@ -151,3 +151,16 @@ def test_failed_translation_falls_back_to_english_with_note(make_client) -> None
     ).json()["answers"]["india"]
     assert block["markdown"].startswith("_भाषांतर सध्या उपलब्ध नाही")
     assert "Widgets must be registered" in block["markdown"]
+
+
+def test_untranslated_output_is_retried_on_the_main_model() -> None:
+    def answer(system, user, kwargs):
+        return user if kwargs.get("fast") else "अनुवाद [S1]"  # fast model echoes English back
+
+    assert LLMTranslator(FakeLLM(answer=answer)).translate_markdown("Text [S1]", "en", "hi") == "अनुवाद [S1]"
+
+
+def test_bracketed_source_annotations_are_normalised() -> None:
+    from app.agents.citations import normalize_markers
+
+    assert normalize_markers("Deceptive name【S1†L1-L4】.") == "Deceptive name[S1]."

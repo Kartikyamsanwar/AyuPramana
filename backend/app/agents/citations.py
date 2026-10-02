@@ -8,8 +8,8 @@ from typing import Sequence, TypeVar
 T = TypeVar("T")
 
 MARKER_RE = re.compile(r"\[S(\d+)\]")
-# Variants models produce: "[ S2 ]", "[s2]", "[S 2]", "【S2】", "[S1, S3]", "[S1; S3]"
-_LOOSE_RE = re.compile(r"[\[【]\s*([Ss]\s*\d+(?:\s*[,;]\s*[Ss]?\s*\d+)*)\s*[\]】]")
+# Variants models produce: "[ S2 ]", "[s2]", "[S 2]", "【S2】", "【S1†L1-L4】", "[S1, S3]", "[S1; S3]"
+_LOOSE_RE = re.compile(r"[\[【]\s*([Ss]\s*\d+(?:\s*[,;]\s*[Ss]?\s*\d+)*)(?:\s*†[^\]】]*)?\s*[\]】]")
 
 
 def normalize_markers(text: str) -> str:

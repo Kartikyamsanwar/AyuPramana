@@ -7,7 +7,7 @@ from typing import Sequence
 
 from app.agents.citations import normalize_markers
 from app.llm.base import LLMClient, LLMError, parse_json_object
-from app.translate.base import LANGUAGE_NAMES, TranslationError, check_markers
+from app.translate.base import LANGUAGE_NAMES, TranslationError, check_markers, has_devanagari
 
 MARKDOWN_SYSTEM = """You translate legal-information text for Ayurveda practitioners and businesses.
 Translate the user's Markdown from {source} into {target}.
@@ -44,9 +44,16 @@ class LLMTranslator:
 
     def translate_markdown(self, markdown: str, source: str, target: str) -> str:
         system = MARKDOWN_SYSTEM.format(source=LANGUAGE_NAMES[source], target=LANGUAGE_NAMES[target])
-        try:
-            translated = normalize_markers(self.llm.complete(system, markdown, fast=True, max_tokens=2500).strip())
-        except LLMError as exc:
-            raise TranslationError(str(exc)) from exc
-        check_markers(markdown, translated)
-        return translated
+        needs_script = target in ("hi", "mr")
+        for fast in (True, False):  # fast model first; the main model if the output isn't usable
+            try:
+                translated = normalize_markers(self.llm.complete(system, markdown, fast=fast, max_tokens=2500).strip())
+            except LLMError as exc:
+                if not fast:
+                    raise TranslationError(str(exc)) from exc
+                continue
+            if needs_script and not has_devanagari(translated):
+                continue  # the model returned the text untranslated
+            check_markers(markdown, translated)
+            return translated
+        raise TranslationError(f"no usable {LANGUAGE_NAMES[target]} translation")
